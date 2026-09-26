@@ -26,6 +26,7 @@
       <h1 id="title"></h1>
       <div id="top-actions"></div>
     </header>
+    <nav id="pills"></nav>
     <div id="broken" hidden></div>
     <section id="content"></section>
   </main>
@@ -36,6 +37,18 @@
     <input id="pal-input" autocomplete="off" spellcheck="false">
     <div id="pal-list"></div>
   </div>
+</div>
+<button id="fab" aria-label="New card">+</button>
+<div id="sheet" hidden>
+  <form class="sheet-box" autocomplete="off">
+    <div class="sheet-head"><b>New card</b><button type="button" class="sheet-x" data-sheet-close>Cancel</button></div>
+    <textarea id="sheet-title" rows="2" placeholder="What needs doing?"></textarea>
+    <div class="sheet-label">Project</div>
+    <div id="sheet-projects" class="pick"></div>
+    <div class="sheet-label">Status</div>
+    <div id="sheet-status" class="pick"></div>
+    <button type="submit" class="btn primary sheet-add">Add card</button>
+  </form>
 </div>
 <div id="toast" hidden></div>
 <script src="app.js"></script>

@@ -241,6 +241,25 @@ function renderNav() {
   $("#nav").innerHTML = h;
 }
 
+// On a phone the sidebar hides, so every page sits in one row of pills under the title.
+function renderPills() {
+  const cards = S.data.cards;
+  const r = S.route;
+  const pill = (hash, label, n, on, color) =>
+    `<button class="pill ${on ? "on" : ""}" data-go="${hash}">${color ? `<span class="dot" style="background:${esc(color)}"></span>` : ""}${esc(label)}${n ? `<span class="n">${n}</span>` : ""}</button>`;
+  let h = pill("#/", "Home", 0, r.kind === "home");
+  const inbox = cards.filter((c) => c.project === "inbox" && OPEN(c)).length;
+  if (inbox || r.kind === "inbox") h += pill("#/inbox", "Inbox", inbox, r.kind === "inbox");
+  for (const p of S.data.projects.filter((p) => p.key !== "inbox")) {
+    h += pill("#/p/" + encodeURIComponent(p.key), p.name, cards.filter((c) => c.project === p.key && OPEN(c)).length, r.kind === "project" && r.key === p.key, p.color);
+  }
+  for (const v of S.data.views) h += pill("#/v/" + encodeURIComponent(v.name), v.name, 0, r.kind === "view" && r.key === v.name);
+  const el = $("#pills");
+  el.innerHTML = h;
+  const on = el.querySelector(".on");
+  if (on) on.scrollIntoView({ block: "nearest", inline: "center" });
+}
+
 function pageName() {
   const r = S.route;
   if (r.kind === "inbox") return "Inbox";
@@ -256,7 +275,7 @@ function renderMain() {
   const p = r.kind === "project" ? project(r.key) : null;
   $("#title").innerHTML = (p ? `<span class="dot" style="background:${esc(p.color)}"></span>` : "") + esc(name) +
     (r.kind === "view" ? ` <span class="chip">${esc(S.data.views.find((v) => v.name === r.key)?.filter || "")}</span>` : "");
-  $("#top-actions").innerHTML = `<button class="btn primary" id="new-card">New card</button>`;
+  $("#top-actions").innerHTML = `<button class="btn icon" id="search" aria-label="Search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button class="btn primary" id="new-card">New card</button>`;
 
   const br = S.data.broken;
   $("#broken").hidden = !br.length;
@@ -312,7 +331,7 @@ function renderMain() {
       if (n) head = `<div class="hint">${n} card${n > 1 ? "s" : ""} in the <a href="#/inbox">Inbox</a> need a project.</div>`;
     }
     if (r.kind === "inbox") {
-      head = `<div class="hint">New cards land here when nobody said which project they belong to. Open one and pick its project, and it leaves the Inbox.</div>`;
+      head = `<div class="hint">New cards land here when nobody said which project they belong to. Tap a project under a card to move it there.</div>`;
     }
     const empty = {
       home: "Nothing to do.<br>Cards in Todo, In Progress and In Review show here.",
@@ -326,6 +345,8 @@ function renderMain() {
         const g = list.filter((c) => c.status === st);
         return g.length ? `<div class="group-head">${statusIcon(st)} ${STATUS_NAMES[st]} <span class="n">${g.length}</span></div>` + g.map((c) => row(c, true)).join("") : "";
       }).join("") + `</div>`;
+    } else if (r.kind === "inbox" && list.length) {
+      body = `<div class="list">` + list.map((c) => row(c, false) + movePills(c, "in-row")).join("") + `</div>`;
     } else if (list.length) {
       body = `<div class="list">` + list.map((c) => row(c, r.kind !== "inbox")).join("") + `</div>`;
     } else body = `<div class="empty">${empty}</div>`;
@@ -333,6 +354,26 @@ function renderMain() {
   }
   const el = document.querySelector(".focus");
   if (el) el.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
+function movePills(c, cls) {
+  return `<div class="move ${cls}">` + S.data.projects.filter((p) => p.key !== "inbox").map((p) =>
+    `<button data-move="${esc(p.key)}" data-id="${esc(c.id)}"><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}</button>`).join("") + `</div>`;
+}
+
+async function moveProject(id, key) {
+  const before = card(id);
+  if (!before) return;
+  const from = before.project;
+  const c = await patch(id, { project: key });
+  // The id changes with the project (IN-4 becomes VIGI-11). Follow it.
+  if (S.open === id || S.route.open === id) {
+    S.open = null;
+    history.replaceState(null, "", baseHash());
+    S.route = parseRoute();
+    render();
+  }
+  toast(`Moved to ${project(key).name} as ${c.id}`, false, { label: "Undo", run: () => patch(c.id, { project: from }) });
 }
 
 function renderPanel() {
@@ -354,7 +395,8 @@ function renderPanel() {
     return `<div class="act ${m[3] ? "note" : ""}"><span class="when">${esc(m[1])}</span>${esc(m[2])}${m[3] ? "" : ":"} ${esc(m[4])}</div>`;
   }).join("");
   panel.innerHTML = `
-    <div class="p-top">${projChip(c)} <span>${esc(c.id)}</span><button class="x" data-close title="Close (Esc)">×</button></div>
+    <div class="p-top"><button class="back" data-close>‹ Back</button>${projChip(c)} <span>${esc(c.id)}</span><button class="x" data-close title="Close (Esc)">×</button></div>
+    ${c.project === "inbox" ? `<div class="p-sec first">Which project is this for?</div>${movePills(c, "in-panel")}` : ""}
     <textarea class="p-title" rows="1" data-f="title">${esc(c.title)}</textarea>
     <div class="p-fields">
       <label>Status</label><select data-f="status">${opt(S.data.statuses, c.status, STATUS_NAMES)}</select>
@@ -378,6 +420,7 @@ function renderPanel() {
 function render() {
   if (!S.data) return;
   renderNav();
+  renderPills();
   renderMain();
   renderPanel();
 }
@@ -408,9 +451,15 @@ document.addEventListener("click", (e) => {
   const sw = t.closest("[data-sw]");
   if (sw) return swipeAct(sw.closest(".swipe").dataset.id, sw.dataset.sw);
   if (openSwipe) { closeSwipe(); if (t.closest(".swipe")) return; }
-  if (t.closest("#new-card")) return newCardPrompt();
+  if (t.closest("#new-card") || t.closest("#fab")) return PHONE.matches ? openSheet() : newCardPrompt();
+  if (t.closest("#search")) return openPalette();
+  if (t.closest("[data-sheet-close]") || t.id === "sheet") return closeSheet();
+  const pk = t.closest("[data-pick]");
+  if (pk) { pk.parentElement.querySelectorAll(".on").forEach((x) => x.classList.remove("on")); pk.classList.add("on"); return; }
+  const mv = t.closest("[data-move]");
+  if (mv) return moveProject(mv.dataset.id, mv.dataset.move);
   const add = t.closest("[data-add]");
-  if (add) return newCardPrompt(S.route.key, add.dataset.add);
+  if (add) return PHONE.matches ? openSheet(S.route.key, add.dataset.add) : newCardPrompt(S.route.key, add.dataset.add);
   const el = t.closest(".card, .row");
   if (el) {
     if (Date.now() - swipedAt < 400) return;
@@ -514,6 +563,44 @@ document.addEventListener("keydown", (e) => {
   e.preventDefault();
   if (S.open && e.key.startsWith("Arrow")) { const c = focused(); if (c) return showCard(c.id); }
   render();
+});
+
+// ---------- new card sheet (phone) ----------
+// The project is picked right here, so a card made on the phone never lands in the Inbox by accident.
+
+function openSheet(projectKey, status) {
+  const r = S.route;
+  const key = projectKey || (r.kind === "project" ? r.key : localStorage.getItem("track.lastProject") || S.data.projects.find((p) => p.key !== "inbox").key);
+  const st = status || "todo";
+  $("#sheet-projects").innerHTML = S.data.projects.filter((p) => p.key !== "inbox").map((p) =>
+    `<button type="button" data-pick="${esc(p.key)}" class="${p.key === key ? "on" : ""}"><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}</button>`).join("") +
+    `<button type="button" data-pick="inbox" class="${key === "inbox" ? "on" : ""}">Not sure</button>`;
+  $("#sheet-status").innerHTML = ["todo", "in-progress", "backlog"].map((s) =>
+    `<button type="button" data-pick="${s}" class="${s === st ? "on" : ""}">${statusIcon(s)} ${STATUS_NAMES[s]}</button>`).join("");
+  $("#sheet").hidden = false;
+  const t = $("#sheet-title");
+  t.value = "";
+  t.focus();
+}
+
+function closeSheet() {
+  $("#sheet").hidden = true;
+  $("#sheet-title").blur();
+}
+
+$("#sheet form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const title = $("#sheet-title").value.trim();
+  if (!title) return $("#sheet-title").focus();
+  const key = $("#sheet-projects .on")?.dataset.pick || "inbox";
+  const status = $("#sheet-status .on")?.dataset.pick || "todo";
+  if (key !== "inbox") localStorage.setItem("track.lastProject", key);
+  closeSheet();
+  await create(key, title, { status });
+});
+$("#sheet-title").addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#sheet form").requestSubmit(); }
+  if (e.key === "Escape") closeSheet();
 });
 
 // ---------- swipe (phone) ----------
