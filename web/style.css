@@ -136,7 +136,7 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
 .pal-item.sel { background: var(--card-hover); color: var(--text); }
 .pal-sec { font-size: 11px; color: var(--faint); padding: 8px 12px 4px; }
 
-#toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--card-hover); border: 1px solid var(--line); border-radius: 8px; padding: 9px 14px; z-index: 30; }
+#toast { position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--card-hover); border: 1px solid var(--line); border-radius: 8px; padding: 9px 14px; z-index: 30; }
 #toast.err { border-color: #5a2a2a; color: #ffb4b4; }
 
 /* Phone */
@@ -158,3 +158,22 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
   .kbd-hint kbd { display: none; }
   .p-fields select, .p-fields input, .p-note, .p-body, #pal-input { font-size: 16px; }
 }
+
+/* Swipe rows (phone). The actions sit behind the row and show as it slides. */
+.swipe { position: relative; overflow: hidden; }
+.swipe .row { position: relative; background: var(--bg); touch-action: pan-y; }
+.sw-left, .sw-right { position: absolute; top: 0; bottom: 0; display: flex; }
+.sw-left { left: 0; }
+.sw-right { right: 0; }
+.sw-left button, .sw-right button { border: 0; color: #fff; font-weight: 600; min-width: 84px; padding: 0 16px; }
+.sw-left button { background: #6b6f78; }
+.sw-right button[data-sw="in-progress"] { background: #a8912f; }
+.sw-right button[data-sw="done"] { background: var(--accent); }
+.swipe:not(.sw-l) .sw-left, .swipe:not(.sw-r) .sw-right { visibility: hidden; }
+/* Past half the width, the one action fills the row: let go and it happens. */
+.swipe.sw-full.sw-r .sw-right { left: 0; }
+.swipe.sw-full.sw-r .sw-right button[data-sw="in-progress"] { display: none; }
+.swipe.sw-full.sw-r .sw-right button[data-sw="done"] { flex: 1; text-align: right; }
+.swipe.sw-full.sw-l .sw-left { right: 0; }
+.swipe.sw-full.sw-l .sw-left button { flex: 1; text-align: left; }
+#toast button { margin-left: 12px; background: none; border: 0; color: var(--focus); font-weight: 600; padding: 0; }

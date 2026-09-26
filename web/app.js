@@ -108,12 +108,20 @@ const byUpdated = (a, b) => (b.updated > a.updated ? 1 : -1);
 
 // ---------- routing ----------
 
+// The open card rides in the URL (#/p/vigi?c=VIGI-3). Opening one is a step in
+// history, so the phone's back swipe closes the card and stays on the page.
 function parseRoute() {
-  const h = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
-  if (h === "inbox") return { kind: "inbox" };
-  if (h.startsWith("p/")) return { kind: "project", key: h.slice(2) };
-  if (h.startsWith("v/")) return { kind: "view", key: h.slice(2) };
-  return { kind: "home" };
+  const [path, query] = location.hash.replace(/^#\/?/, "").split("?c=");
+  const h = decodeURIComponent(path);
+  const open = query ? decodeURIComponent(query) : null;
+  if (h === "inbox") return { kind: "inbox", open };
+  if (h.startsWith("p/")) return { kind: "project", key: h.slice(2), open };
+  if (h.startsWith("v/")) return { kind: "view", key: h.slice(2), open };
+  return { kind: "home", open };
+}
+
+function baseHash() {
+  return "#/" + location.hash.replace(/^#\/?/, "").split("?c=")[0];
 }
 
 function go(hash) {
@@ -121,12 +129,40 @@ function go(hash) {
   location.hash = hash;
 }
 
-window.addEventListener("hashchange", () => {
+let pushedCard = false;
+function showCard(id) {
+  S.open = id;
+  const want = baseHash() + "?c=" + encodeURIComponent(id);
+  if (location.hash === want) return render();
+  if (S.route.open) history.replaceState(null, "", want);
+  else { history.pushState(null, "", want); pushedCard = true; }
   S.route = parseRoute();
-  S.focus = { c: 0, r: 0 };
+  render();
+}
+
+function closeCard() {
+  if (!S.route.open) { S.open = null; return render(); }
+  if (pushedCard) { pushedCard = false; history.back(); return; }
+  history.replaceState(null, "", baseHash());
+  S.route = parseRoute();
+  S.open = null;
+  render();
+}
+
+window.addEventListener("hashchange", () => onRoute());
+window.addEventListener("popstate", () => onRoute());
+function onRoute() {
+  const before = S.route;
+  S.route = parseRoute();
+  const samePage = before.kind === S.route.kind && before.key === S.route.key;
+  // Closing a card is not a new page. Keep the place in the list.
+  if (!samePage) S.focus = { c: 0, r: 0 };
+  if (!S.route.open) pushedCard = false;
+  S.open = S.route.open;
+  if (S.open) focusCard(S.open);
   document.getElementById("app").classList.remove("menu-open");
   render();
-});
+}
 
 // The cards on screen, as columns. A list page is one column. Keyboard moves use this.
 function layout() {
@@ -145,8 +181,13 @@ function layout() {
     const so = S.data.statuses;
     return [{ cards: list.sort((a, b) => so.indexOf(a.status) - so.indexOf(b.status) || byPriority(a, b)) }];
   }
-  return [{ cards: cards.filter((c) => c.status === "in-progress").sort(byPriority) }];
+  return [{ cards: cards.filter((c) => HOME.includes(c.status) && c.project !== "inbox").sort(byHome) }];
 }
+
+// Home is the work you have said yes to: In Progress, In Review, then Todo.
+const HOME = ["in-progress", "in-review", "todo"];
+const byHome = (a, b) => HOME.indexOf(a.status) - HOME.indexOf(b.status) || byDue(a, b) || byPriority(a, b);
+const byDue = (a, b) => (a.due || "9999") < (b.due || "9999") ? -1 : (a.due || "9999") > (b.due || "9999") ? 1 : 0;
 
 function focused() {
   const cols = layout();
@@ -186,7 +227,7 @@ function renderNav() {
   const r = S.route;
   const item = (hash, label, count, active, dot) =>
     `<button class="nav-item ${active ? "active" : ""}" data-go="${hash}">${dot || ""}<span>${esc(label)}</span>${count ? `<span class="count">${count}</span>` : ""}</button>`;
-  let h = item("#/", "Home", cards.filter((c) => c.status === "in-progress").length, r.kind === "home", "");
+  let h = item("#/", "Home", cards.filter((c) => HOME.includes(c.status) && c.project !== "inbox").length, r.kind === "home", "");
   h += item("#/inbox", "Inbox", cards.filter((c) => c.project === "inbox" && OPEN(c)).length, r.kind === "inbox");
   h += `<div class="nav-head">Projects</div>`;
   for (const p of S.data.projects.filter((p) => p.key !== "inbox")) {
@@ -230,12 +271,19 @@ function renderMain() {
   S.focus.r = Math.max(0, Math.min(S.focus.r, cols[S.focus.c].cards.length - 1));
   const f = focused();
 
-  const row = (c, showProject) => `
+  const row = (c, showProject) => {
+    const inner = `
       <div class="row ${f && f.id === c.id ? "focus" : ""}" data-id="${esc(c.id)}">
         ${statusIcon(c.status)} ${priIcon(c.priority) || `<span style="width:13px"></span>`}
         <span class="id">${esc(c.id)}</span><span class="t">${esc(c.title)}</span>
         <span class="chips">${metaChips(c, "opt")}${showProject ? projChip(c) : ""}</span>
       </div>`;
+    if (!PHONE.matches || !OPEN(c)) return inner;
+    return `<div class="swipe" data-id="${esc(c.id)}">
+        <div class="sw-left"><button data-sw="canceled">Cancel</button></div>
+        <div class="sw-right">${c.status !== "in-progress" ? `<button data-sw="in-progress">Start</button>` : ""}<button data-sw="done">Done</button></div>
+        ${inner}</div>`;
+  };
   // On a phone a project reads as one list, grouped by status, with the active work first.
   if (r.kind === "project" && PHONE.matches) {
     const order = ["in-progress", "in-review", "todo", "backlog", "done"];
@@ -261,14 +309,27 @@ function renderMain() {
     let head = "";
     if (r.kind === "home") {
       const n = S.data.cards.filter((c) => c.project === "inbox" && OPEN(c)).length;
-      if (n) head = `<div class="hint">${n} card${n > 1 ? "s" : ""} in the <a href="#/inbox">Inbox</a> to sort.</div>`;
+      if (n) head = `<div class="hint">${n} card${n > 1 ? "s" : ""} in the <a href="#/inbox">Inbox</a> need a project.</div>`;
+    }
+    if (r.kind === "inbox") {
+      head = `<div class="hint">New cards land here when nobody said which project they belong to. Open one and pick its project, and it leaves the Inbox.</div>`;
     }
     const empty = {
-      home: "Nothing in progress.<br>Open a project and move a card to In Progress.",
+      home: "Nothing to do.<br>Cards in Todo, In Progress and In Review show here.",
       inbox: "The Inbox is empty.",
       view: "No cards match this view.",
     }[r.kind];
-    $("#content").innerHTML = head + (list.length ? `<div class="list">` + list.map((c) => row(c, r.kind !== "inbox")).join("") + `</div>` : `<div class="empty">${empty}</div>`);
+    let body = "";
+    if (r.kind === "home" && list.length) {
+      // Grouped by status, so the one thing you are doing is not lost among the rest.
+      body = `<div class="list">` + HOME.map((st) => {
+        const g = list.filter((c) => c.status === st);
+        return g.length ? `<div class="group-head">${statusIcon(st)} ${STATUS_NAMES[st]} <span class="n">${g.length}</span></div>` + g.map((c) => row(c, true)).join("") : "";
+      }).join("") + `</div>`;
+    } else if (list.length) {
+      body = `<div class="list">` + list.map((c) => row(c, r.kind !== "inbox")).join("") + `</div>`;
+    } else body = `<div class="empty">${empty}</div>`;
+    $("#content").innerHTML = head + body;
   }
   const el = document.querySelector(".focus");
   if (el) el.scrollIntoView({ block: "nearest", inline: "nearest" });
@@ -329,10 +390,10 @@ function openCard(id) {
     const hash = c.project === "inbox" ? "#/inbox" : "#/p/" + encodeURIComponent(c.project);
     history.pushState(null, "", hash);
     S.route = parseRoute();
+    S.focus = { c: 0, r: 0 };
   }
   focusCard(id);
-  S.open = id;
-  render();
+  showCard(id);
 }
 
 // ---------- events ----------
@@ -343,15 +404,18 @@ document.addEventListener("click", (e) => {
   if (goEl) return go(goEl.dataset.go);
   if (t.closest("#menu")) return document.getElementById("app").classList.toggle("menu-open");
   if (t.closest("#open-palette")) return openPalette();
-  if (t.closest("[data-close]")) { S.open = null; return render(); }
+  if (t.closest("[data-close]")) return closeCard();
+  const sw = t.closest("[data-sw]");
+  if (sw) return swipeAct(sw.closest(".swipe").dataset.id, sw.dataset.sw);
+  if (openSwipe) { closeSwipe(); if (t.closest(".swipe")) return; }
   if (t.closest("#new-card")) return newCardPrompt();
   const add = t.closest("[data-add]");
   if (add) return newCardPrompt(S.route.key, add.dataset.add);
   const el = t.closest(".card, .row");
   if (el) {
+    if (Date.now() - swipedAt < 400) return;
     focusCard(el.dataset.id);
-    S.open = el.dataset.id;
-    return render();
+    return showCard(el.dataset.id);
   }
   if (!t.closest("#side") && !t.closest("#menu")) document.getElementById("app").classList.remove("menu-open");
 });
@@ -443,14 +507,87 @@ document.addEventListener("keydown", (e) => {
       f.r = Math.min(f.r, cols[nc].cards.length - 1);
       break;
     }
-    case "Enter": { const c = focused(); if (c) S.open = c.id; break; }
-    case "Escape": S.open = null; break;
+    case "Enter": { const c = focused(); if (c) { e.preventDefault(); return showCard(c.id); } return; }
+    case "Escape": e.preventDefault(); return closeCard();
     default: return;
   }
   e.preventDefault();
-  if (S.open && e.key.startsWith("Arrow")) { const c = focused(); if (c) S.open = c.id; }
+  if (S.open && e.key.startsWith("Arrow")) { const c = focused(); if (c) return showCard(c.id); }
   render();
 });
+
+// ---------- swipe (phone) ----------
+// Like Mail: a short swipe opens the buttons, a long one does the action.
+// Swipe left for Start and Done, right for Cancel. Every swipe can be undone.
+
+let openSwipe = null;
+let swipedAt = 0;
+let drag = null;
+const FULL = 0.5;
+
+function rowOf(el) { return el.querySelector(".row"); }
+function setX(el, x, animate) {
+  const r = rowOf(el);
+  r.style.transition = animate ? "transform .2s ease" : "none";
+  r.style.transform = x ? `translateX(${x}px)` : "";
+  el.classList.toggle("sw-l", x > 0);
+  el.classList.toggle("sw-r", x < 0);
+  const full = Math.abs(x) > el.offsetWidth * FULL;
+  el.classList.toggle("sw-full", full);
+}
+function closeSwipe() {
+  if (openSwipe && document.body.contains(openSwipe)) setX(openSwipe, 0, true);
+  openSwipe = null;
+}
+
+document.addEventListener("touchstart", (e) => {
+  const el = e.target.closest(".swipe");
+  if (!el || e.target.closest("[data-sw]")) return;
+  if (openSwipe && openSwipe !== el) closeSwipe();
+  const t = e.touches[0];
+  // An open row starts from where it sits, so a second swipe carries on from there.
+  const base = openSwipe === el ? parseFloat((rowOf(el).style.transform.match(/-?[\d.]+/) || [0])[0]) : 0;
+  drag = { el, x0: t.clientX, y0: t.clientY, base, dx: 0, dir: null };
+}, { passive: true });
+
+document.addEventListener("touchmove", (e) => {
+  if (!drag) return;
+  const t = e.touches[0];
+  const dx = t.clientX - drag.x0, dy = t.clientY - drag.y0;
+  if (!drag.dir) {
+    if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+    drag.dir = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+  }
+  if (drag.dir !== "x") return;
+  e.preventDefault();
+  drag.dx = drag.base + dx;
+  setX(drag.el, drag.dx, false);
+}, { passive: false });
+
+document.addEventListener("touchend", () => {
+  if (!drag) return;
+  const { el, dx, dir } = drag;
+  drag = null;
+  if (dir !== "x") return;
+  swipedAt = Date.now();
+  const w = el.offsetWidth;
+  if (dx < -w * FULL) return swipeAct(el.dataset.id, "done");
+  if (dx > w * FULL) return swipeAct(el.dataset.id, "canceled");
+  const right = el.querySelector(".sw-right").offsetWidth, left = el.querySelector(".sw-left").offsetWidth;
+  if (dx < -40) { setX(el, -right, true); openSwipe = el; return; }
+  if (dx > 40) { setX(el, left, true); openSwipe = el; return; }
+  setX(el, 0, true);
+  openSwipe = null;
+});
+
+async function swipeAct(id, status) {
+  const c = card(id);
+  if (!c) return;
+  const was = c.status;
+  openSwipe = null;
+  await patch(id, { status });
+  toast(`${id} moved to ${STATUS_NAMES[status]}`, false, { label: "Undo", run: () => patch(id, { status: was }) });
+}
 
 // ---------- command menu ----------
 
@@ -582,14 +719,21 @@ $("#palette").addEventListener("click", (e) => {
 // ---------- toast ----------
 
 let toastTimer;
-function toast(msg, err) {
+function toast(msg, err, action) {
   const t = $("#toast");
   t.textContent = msg;
   t.className = err ? "err" : "";
+  if (action) {
+    const b = document.createElement("button");
+    b.textContent = action.label;
+    b.onclick = () => { t.hidden = true; action.run(); };
+    t.appendChild(b);
+  }
   t.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (t.hidden = true), 2600);
+  toastTimer = setTimeout(() => (t.hidden = true), action ? 5000 : 2600);
 }
 
 S.route = parseRoute();
-load().then(listen);
+S.open = S.route.open;
+load().then(() => { if (S.open) focusCard(S.open); render(); listen(); });
