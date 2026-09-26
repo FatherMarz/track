@@ -181,11 +181,17 @@ function layout() {
     const so = S.data.statuses;
     return [{ cards: list.sort((a, b) => so.indexOf(a.status) - so.indexOf(b.status) || byPriority(a, b)) }];
   }
-  return [{ cards: cards.filter((c) => HOME.includes(c.status) && c.project !== "inbox").sort(byHome) }];
+  return [{ cards: homeCards(cards) }];
 }
 
-// Home is the work you have said yes to: In Progress, In Review, then Todo.
+// Home is your life and your Inbox: the IRL work you have said yes to (In
+// Progress, In Review, Todo) plus everything not yet filed. Work projects
+// keep their own tabs.
 const HOME = ["in-progress", "in-review", "todo"];
+const homeCards = (cards) => [
+  ...cards.filter((c) => c.project === "inbox" && OPEN(c)).sort(byUpdated),
+  ...cards.filter((c) => c.project === "irl" && HOME.includes(c.status)).sort(byHome),
+];
 const byHome = (a, b) => HOME.indexOf(a.status) - HOME.indexOf(b.status) || byDue(a, b) || byPriority(a, b);
 const byDue = (a, b) => (a.due || "9999") < (b.due || "9999") ? -1 : (a.due || "9999") > (b.due || "9999") ? 1 : 0;
 
@@ -227,7 +233,7 @@ function renderNav() {
   const r = S.route;
   const item = (hash, label, count, active, dot) =>
     `<button class="nav-item ${active ? "active" : ""}" data-go="${hash}">${dot || ""}<span>${esc(label)}</span>${count ? `<span class="count">${count}</span>` : ""}</button>`;
-  let h = item("#/", "Home", cards.filter((c) => HOME.includes(c.status) && c.project !== "inbox").length, r.kind === "home", "");
+  let h = item("#/", "Home", homeCards(cards).length, r.kind === "home", "");
   h += item("#/inbox", "Inbox", cards.filter((c) => c.project === "inbox" && OPEN(c)).length, r.kind === "inbox");
   h += `<div class="nav-head">Projects</div>`;
   for (const p of S.data.projects.filter((p) => p.key !== "inbox")) {
@@ -331,25 +337,24 @@ function renderMain() {
   } else {
     const list = cols[0].cards;
     let head = "";
-    if (r.kind === "home") {
-      const n = S.data.cards.filter((c) => c.project === "inbox" && OPEN(c)).length;
-      if (n) head = `<div class="hint"><a href="#/inbox">${n} in the Inbox</a> to file.</div>`;
-    }
     if (r.kind === "inbox") {
       head = `<div class="hint">Cards with no project yet. Open one to file it.</div>`;
     }
     const empty = {
-      home: "Nothing to do.<br>Cards in Todo, In Progress and In Review show here.",
+      home: "Nothing to do.<br>Your Inbox and your IRL cards in Todo, In Progress and In Review show here.",
       inbox: "The Inbox is empty.",
       view: "No cards match this view.",
     }[r.kind];
     let body = "";
     if (r.kind === "home" && list.length) {
       // Grouped by status, so the one thing you are doing is not lost among the rest.
-      body = `<div class="list">` + HOME.map((st) => {
-        const g = list.filter((c) => c.status === st);
-        return g.length ? `<div class="group-head">${statusIcon(st)} ${STATUS_NAMES[st]} <span class="n">${g.length}</span></div>` + g.map((c) => row(c, true)).join("") : "";
-      }).join("") + `</div>`;
+      const inbox = list.filter((c) => c.project === "inbox");
+      body = `<div class="list">` +
+        (inbox.length ? `<div class="group-head">Inbox <span class="n">${inbox.length}</span></div>` + inbox.map((c) => row(c, false)).join("") : "") +
+        HOME.map((st) => {
+          const g = list.filter((c) => c.project !== "inbox" && c.status === st);
+          return g.length ? `<div class="group-head">${statusIcon(st)} ${STATUS_NAMES[st]} <span class="n">${g.length}</span></div>` + g.map((c) => row(c, true)).join("") : "";
+        }).join("") + `</div>`;
     } else if (list.length) {
       body = `<div class="list">` + list.map((c) => row(c, r.kind !== "inbox")).join("") + `</div>`;
     } else body = `<div class="empty">${empty}</div>`;
