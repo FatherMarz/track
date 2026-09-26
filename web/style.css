@@ -136,8 +136,8 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
 .pal-item.sel { background: var(--card-hover); color: var(--text); }
 .pal-sec { font-size: 11px; color: var(--faint); padding: 8px 12px 4px; }
 
-#toast { position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--card-hover); border: 1px solid var(--line); border-radius: 8px; padding: 9px 14px; z-index: 30; }
-#toast.err { border-color: #5a2a2a; color: #ffb4b4; }
+#toast { position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); white-space: nowrap; display: flex; align-items: center; background: #ececf1; color: #16161a; border-radius: 10px; padding: 10px 14px; font-weight: 500; box-shadow: 0 10px 30px rgba(0, 0, 0, .5); z-index: 30; }
+#toast.err { background: #ffd9d9; color: #5a1414; }
 
 /* Phone */
 @media (max-width: 760px) {
@@ -162,7 +162,8 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
 /* Swipe rows (phone). The actions sit behind the row and show as it slides. */
 .swipe { position: relative; overflow: hidden; }
 .swipe .row { position: relative; background: var(--bg); touch-action: pan-y; }
-.sw-left, .sw-right { position: absolute; top: 0; bottom: 0; display: flex; }
+.sw-left, .sw-right { position: absolute; top: 0; bottom: 0; display: flex; transition: left .18s var(--ease, ease), right .18s var(--ease, ease); }
+.sw-left button, .sw-right button { transition: flex-grow .18s ease, background .18s; }
 .sw-left { left: 0; }
 .sw-right { right: 0; }
 .sw-left button, .sw-right button { border: 0; color: #fff; font-weight: 600; min-width: 84px; padding: 0 16px; }
@@ -176,7 +177,7 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
 .swipe.sw-full.sw-r .sw-right button[data-sw="done"] { flex: 1; text-align: right; }
 .swipe.sw-full.sw-l .sw-left { right: 0; }
 .swipe.sw-full.sw-l .sw-left button { flex: 1; text-align: left; }
-#toast button { margin-left: 12px; background: none; border: 0; color: var(--focus); font-weight: 600; padding: 0; }
+#toast button { margin-left: auto; padding: 4px 0 4px 16px; background: none; border: 0; color: var(--accent); font-weight: 700; }
 
 /* Phone navigation, new card sheet, and one-tap sorting. Hidden on a wide screen. */
 #pills, #fab, .p-top .back { display: none; }
@@ -209,7 +210,7 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
   #top { display: none; }
   /* The phone's clock and status icons sit over the top of the page. Clear them
      fully, then add room, so the pills never sit under the blur. */
-  #pills { display: flex; gap: 8px; overflow-x: auto; padding: calc(env(safe-area-inset-top) + 14px) 12px 12px; background: var(--side); border-bottom: 1px solid #2a2a31; box-shadow: 0 6px 16px rgba(0, 0, 0, .35); position: relative; z-index: 2; scrollbar-width: none;
+  #pills { display: flex; gap: 8px; overflow-x: auto; padding: calc(env(safe-area-inset-top) + 24px) 12px 10px; background: var(--side); border-bottom: 1px solid #2a2a31; box-shadow: 0 6px 16px rgba(0, 0, 0, .35); position: relative; z-index: 2; scrollbar-width: none;
     -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
   #pills::after { content: ""; flex: none; width: 24px; }
   #pills::-webkit-scrollbar { display: none; }
@@ -218,7 +219,8 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
   .list { padding-bottom: 110px; }
   .p-top .back { display: inline-block; background: none; border: 0; color: var(--focus); font-size: 16px; padding: 4px 8px 4px 0; }
   .p-top .x { display: none; }
-  #toast { bottom: max(92px, calc(env(safe-area-inset-bottom) + 84px)); }
+  /* On a phone it sits at the bottom, by your thumb, beside the + button. */
+  #toast { left: 12px; right: 86px; transform: none; bottom: max(26px, calc(env(safe-area-inset-bottom) + 14px)); min-height: 52px; padding: 12px 16px; font-size: 15px; white-space: normal; }
 }
 
 /* Motion. Short and soft, and none of it for people who turned motion off. */
@@ -251,7 +253,16 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
   @keyframes panel-out-phone { from { transform: none; } to { transform: translateX(100%); } }
   #panel.panel-in { animation: panel-in-phone .34s var(--ease); }
   #panel.panel-out { animation: panel-out-phone .26s ease-in forwards; }
+  @keyframes toast-in-phone { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+  #toast.toast-in { animation: toast-in-phone .28s var(--ease); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+@media (max-width: 760px) {
+  .pill { padding: 10px 17px; font-size: 16px; }
+  .pill.icon { padding: 10px 13px; }
+  .pill.icon svg { width: 18px; height: 18px; }
+}
+#toast[hidden] { display: none; }

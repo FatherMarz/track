@@ -641,7 +641,9 @@ $("#sheet-title").addEventListener("keydown", (e) => {
 let openSwipe = null;
 let swipedAt = 0;
 let drag = null;
-const FULL = 0.5;
+// A long pull past 38% of the width, or a quick flick, does the action on release.
+const FULL = 0.38;
+const FLICK = 0.6; // px per ms
 
 function rowOf(el) { return el.querySelector(".row"); }
 const EASE = "cubic-bezier(.22, .9, .25, 1)";
@@ -666,7 +668,7 @@ document.addEventListener("touchstart", (e) => {
   const t = e.touches[0];
   // An open row starts from where it sits, so a second swipe carries on from there.
   const base = openSwipe === el ? parseFloat((rowOf(el).style.transform.match(/-?[\d.]+/) || [0])[0]) : 0;
-  drag = { el, x0: t.clientX, y0: t.clientY, base, dx: 0, dir: null, frame: 0 };
+  drag = { el, x0: t.clientX, y0: t.clientY, base, dx: 0, dir: null, frame: 0, lastX: t.clientX, lastT: e.timeStamp, v: 0 };
 }, { passive: true });
 
 document.addEventListener("touchmove", (e) => {
@@ -679,6 +681,11 @@ document.addEventListener("touchmove", (e) => {
   }
   if (drag.dir !== "x") return;
   e.preventDefault();
+  // Speed over the last move, smoothed, so a flick can finish the action.
+  const dt = Math.max(1, e.timeStamp - drag.lastT);
+  drag.v = 0.6 * ((t.clientX - drag.lastX) / dt) + 0.4 * drag.v;
+  drag.lastX = t.clientX;
+  drag.lastT = e.timeStamp;
   const w = drag.el.offsetWidth;
   let x = drag.base + dx;
   // Past most of the width the row slows down, so it feels held rather than loose.
@@ -693,14 +700,14 @@ document.addEventListener("touchmove", (e) => {
 
 document.addEventListener("touchend", () => {
   if (!drag) return;
-  const { el, dx, dir, frame } = drag;
+  const { el, dx, dir, frame, v } = drag;
   if (frame) cancelAnimationFrame(frame);
   drag = null;
   if (dir !== "x") return;
   swipedAt = Date.now();
   const w = el.offsetWidth;
-  if (dx < -w * FULL) return swipeAct(el.dataset.id, "done");
-  if (dx > w * FULL) return swipeAct(el.dataset.id, "canceled");
+  if (dx < -w * FULL || (dx < -60 && v < -FLICK)) return swipeAct(el.dataset.id, "done");
+  if (dx > w * FULL || (dx > 60 && v > FLICK)) return swipeAct(el.dataset.id, "canceled");
   const right = el.querySelector(".sw-right").offsetWidth, left = el.querySelector(".sw-left").offsetWidth;
   if (dx < -40) { setX(el, -right, true); openSwipe = el; return; }
   if (dx > 40) { setX(el, left, true); openSwipe = el; return; }
