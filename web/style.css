@@ -181,9 +181,11 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
 /* Phone navigation, new card sheet, and one-tap sorting. Hidden on a wide screen. */
 #pills, #fab, .p-top .back { display: none; }
 .pill.icon { padding: 6px 10px; line-height: 0; }
-.pill { display: inline-flex; align-items: center; gap: 6px; flex: none; border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 999px; padding: 6px 12px; font-size: 13px; }
-.pill.on { background: var(--card-hover); color: var(--text); border-color: #3a3a44; }
-.pill .n { color: var(--faint); font-size: 11.5px; }
+.pill { display: inline-flex; align-items: center; gap: 7px; flex: none; border: 1px solid #2e2e36; background: #1d1d23; color: #c9ccd3; border-radius: 999px; padding: 8px 14px; font-size: 14.5px; font-weight: 500; transition: background .2s, color .2s, border-color .2s, transform .15s; }
+.pill:active { transform: scale(.96); }
+.pill.on { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 2px 10px rgba(94, 106, 210, .35); }
+.pill .n { color: #8f94a0; font-size: 12px; font-variant-numeric: tabular-nums; }
+.pill.on .n { color: rgba(255, 255, 255, .8); }
 .move { display: flex; flex-wrap: wrap; gap: 6px; }
 .move button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--card); color: var(--muted); border-radius: 999px; padding: 4px 10px; font-size: 12px; }
 .move button:hover { color: var(--text); background: var(--card-hover); }
@@ -207,7 +209,7 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
   #top { display: none; }
   /* The phone's clock and status icons sit over the top of the page. Clear them
      fully, then add room, so the pills never sit under the blur. */
-  #pills { display: flex; gap: 7px; overflow-x: auto; padding: calc(env(safe-area-inset-top) + 12px) 12px 10px; background: var(--bg); border-bottom: 1px solid var(--line); scrollbar-width: none;
+  #pills { display: flex; gap: 8px; overflow-x: auto; padding: calc(env(safe-area-inset-top) + 14px) 12px 12px; background: var(--side); border-bottom: 1px solid #2a2a31; box-shadow: 0 6px 16px rgba(0, 0, 0, .35); position: relative; z-index: 2; scrollbar-width: none;
     -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
   #pills::after { content: ""; flex: none; width: 24px; }
   #pills::-webkit-scrollbar { display: none; }
@@ -217,4 +219,39 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
   .p-top .back { display: inline-block; background: none; border: 0; color: var(--focus); font-size: 16px; padding: 4px 8px 4px 0; }
   .p-top .x { display: none; }
   #toast { bottom: max(92px, calc(env(safe-area-inset-bottom) + 84px)); }
+}
+
+/* Motion. Short and soft, and none of it for people who turned motion off. */
+:root { --ease: cubic-bezier(.22, .9, .25, 1); }
+@keyframes page-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.page-in { animation: page-in .26s var(--ease); }
+@keyframes panel-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes panel-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateX(24px); } }
+#panel.panel-in { animation: panel-in .28s var(--ease); }
+#panel.panel-out { animation: panel-out .2s ease-in forwards; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes rise { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes sink { from { transform: none; } to { transform: translateY(100%); } }
+#sheet.sheet-in { animation: fade-in .22s ease-out; }
+#sheet.sheet-in .sheet-box { animation: rise .34s var(--ease); }
+#sheet.sheet-out { animation: fade-out .22s ease-in forwards; }
+#sheet.sheet-out .sheet-box { animation: sink .22s ease-in forwards; }
+@keyframes pal-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pal-box-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
+#palette.pal-in { animation: pal-in .18s ease-out; }
+#palette.pal-in .pal-box { animation: pal-box-in .22s var(--ease); }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+#toast.toast-in { animation: toast-in .26s var(--ease); }
+.row, .card, .nav-item, .btn, .pick button, .move button, #fab { transition: background .15s, border-color .15s, color .15s, transform .15s; }
+#fab:active, .btn:active, .pick button:active { transform: scale(.95); }
+.row:active { background: var(--card); }
+@media (max-width: 760px) {
+  @keyframes panel-in-phone { from { transform: translateX(100%); } to { transform: none; } }
+  @keyframes panel-out-phone { from { transform: none; } to { transform: translateX(100%); } }
+  #panel.panel-in { animation: panel-in-phone .34s var(--ease); }
+  #panel.panel-out { animation: panel-out-phone .26s ease-in forwards; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

@@ -156,7 +156,7 @@ function onRoute() {
   S.route = parseRoute();
   const samePage = before.kind === S.route.kind && before.key === S.route.key;
   // Closing a card is not a new page. Keep the place in the list.
-  if (!samePage) S.focus = { c: 0, r: 0 };
+  if (!samePage) { S.focus = { c: 0, r: 0 }; S.pageChanged = true; }
   if (!S.route.open) pushedCard = false;
   S.open = S.route.open;
   if (S.open) focusCard(S.open);
@@ -256,9 +256,12 @@ function renderPills() {
   }
   for (const v of S.data.views) h += pill("#/v/" + encodeURIComponent(v.name), v.name, 0, r.kind === "view" && r.key === v.name);
   const el = $("#pills");
+  const left = el.scrollLeft;
   el.innerHTML = h;
+  el.scrollLeft = left;
   const on = el.querySelector(".on");
-  if (on) on.scrollIntoView({ block: "nearest", inline: "center" });
+  // Bring the current page's pill into view when the page changes, and only then.
+  if (on && S.pageChanged) el.scrollTo({ left: on.offsetLeft - (el.clientWidth - on.offsetWidth) / 2, behavior: "smooth" });
 }
 
 function pageName() {
@@ -282,6 +285,7 @@ function renderMain() {
   $("#broken").hidden = !br.length;
   $("#broken").innerHTML = br.map((b) => `Cannot read ${esc(b.path)}: ${esc(b.error)}`).join("<br>");
 
+  const keep = { top: $("#content").scrollTop, left: $("#content").scrollLeft };
   const cols = layout();
   S.focus.c = Math.max(0, Math.min(S.focus.c, cols.length - 1));
   if (!cols[S.focus.c].cards.length) {
@@ -351,8 +355,14 @@ function renderMain() {
     } else body = `<div class="empty">${empty}</div>`;
     $("#content").innerHTML = head + body;
   }
-  const el = document.querySelector(".focus");
-  if (el) el.scrollIntoView({ block: "nearest", inline: "nearest" });
+  const sc = $("#content");
+  if (S.pageChanged) { sc.scrollTop = 0; sc.scrollLeft = 0; animate(sc, "page-in"); }
+  else { sc.scrollTop = keep.top; sc.scrollLeft = keep.left; }
+  // Follow the selection only when the keyboard moved it. A tap or a swipe keeps your place.
+  if (S.kbd) {
+    const el = document.querySelector(".focus");
+    if (el) el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+  }
 }
 
 function movePills(c, cls) {
@@ -379,13 +389,20 @@ function renderPanel() {
   const panel = $("#panel");
   const c = S.open && card(S.open);
   if (!c) {
-    panel.hidden = true;
     S.open = null;
+    if (!panel.hidden && !panel.classList.contains("panel-out")) {
+      panel.classList.add("panel-out");
+      panel.addEventListener("animationend", () => { panel.hidden = true; panel.classList.remove("panel-out"); }, { once: true });
+    }
     return;
   }
   // Leave the panel alone while you type in it. A live update redraws it after.
   if (panel.contains(document.activeElement) && /INPUT|TEXTAREA/.test(document.activeElement.tagName) && panel.dataset.id === c.id) return;
-  panel.hidden = false;
+  if (panel.hidden || panel.classList.contains("panel-out")) {
+    panel.classList.remove("panel-out");
+    panel.hidden = false;
+    animate(panel, "panel-in");
+  }
   panel.dataset.id = c.id;
   const opt = (list, cur, names) => list.map((v) => `<option value="${esc(v)}" ${v === cur ? "selected" : ""}>${esc(names ? names[v] : v)}</option>`).join("");
   const acts = c.activity.map((a) => {
@@ -422,6 +439,16 @@ function render() {
   renderPills();
   renderMain();
   renderPanel();
+  S.pageChanged = false;
+  S.kbd = false;
+}
+
+// Play a one-shot CSS animation on an element.
+function animate(el, name) {
+  el.classList.remove(name);
+  void el.offsetWidth;
+  el.classList.add(name);
+  el.addEventListener("animationend", () => el.classList.remove(name), { once: true });
 }
 
 function openCard(id) {
@@ -560,6 +587,7 @@ document.addEventListener("keydown", (e) => {
     default: return;
   }
   e.preventDefault();
+  S.kbd = true;
   if (S.open && e.key.startsWith("Arrow")) { const c = focused(); if (c) return showCard(c.id); }
   render();
 });
@@ -577,14 +605,18 @@ function openSheet(projectKey, status) {
   $("#sheet-status").innerHTML = ["todo", "in-progress", "backlog"].map((s) =>
     `<button type="button" data-pick="${s}" class="${s === st ? "on" : ""}">${statusIcon(s)} ${STATUS_NAMES[s]}</button>`).join("");
   $("#sheet").hidden = false;
+  animate($("#sheet"), "sheet-in");
   const t = $("#sheet-title");
   t.value = "";
   t.focus();
 }
 
 function closeSheet() {
-  $("#sheet").hidden = true;
+  const sh = $("#sheet");
   $("#sheet-title").blur();
+  if (sh.hidden) return;
+  sh.classList.add("sheet-out");
+  sh.addEventListener("animationend", () => { sh.hidden = true; sh.classList.remove("sheet-out"); }, { once: true });
 }
 
 $("#sheet form").addEventListener("submit", async (e) => {
@@ -612,10 +644,11 @@ let drag = null;
 const FULL = 0.5;
 
 function rowOf(el) { return el.querySelector(".row"); }
-function setX(el, x, animate) {
+const EASE = "cubic-bezier(.22, .9, .25, 1)";
+function setX(el, x, smooth) {
   const r = rowOf(el);
-  r.style.transition = animate ? "transform .2s ease" : "none";
-  r.style.transform = x ? `translateX(${x}px)` : "";
+  r.style.transition = smooth ? `transform .32s ${EASE}` : "none";
+  r.style.transform = x ? `translate3d(${x}px,0,0)` : "";
   el.classList.toggle("sw-l", x > 0);
   el.classList.toggle("sw-r", x < 0);
   const full = Math.abs(x) > el.offsetWidth * FULL;
@@ -633,7 +666,7 @@ document.addEventListener("touchstart", (e) => {
   const t = e.touches[0];
   // An open row starts from where it sits, so a second swipe carries on from there.
   const base = openSwipe === el ? parseFloat((rowOf(el).style.transform.match(/-?[\d.]+/) || [0])[0]) : 0;
-  drag = { el, x0: t.clientX, y0: t.clientY, base, dx: 0, dir: null };
+  drag = { el, x0: t.clientX, y0: t.clientY, base, dx: 0, dir: null, frame: 0 };
 }, { passive: true });
 
 document.addEventListener("touchmove", (e) => {
@@ -646,13 +679,22 @@ document.addEventListener("touchmove", (e) => {
   }
   if (drag.dir !== "x") return;
   e.preventDefault();
-  drag.dx = drag.base + dx;
-  setX(drag.el, drag.dx, false);
+  const w = drag.el.offsetWidth;
+  let x = drag.base + dx;
+  // Past most of the width the row slows down, so it feels held rather than loose.
+  const lim = w * 0.8;
+  if (Math.abs(x) > lim) x = Math.sign(x) * (lim + (Math.abs(x) - lim) * 0.35);
+  drag.dx = x;
+  if (!drag.frame) {
+    const d = drag;
+    d.frame = requestAnimationFrame(() => { d.frame = 0; setX(d.el, d.dx, false); });
+  }
 }, { passive: false });
 
 document.addEventListener("touchend", () => {
   if (!drag) return;
-  const { el, dx, dir } = drag;
+  const { el, dx, dir, frame } = drag;
+  if (frame) cancelAnimationFrame(frame);
   drag = null;
   if (dir !== "x") return;
   swipedAt = Date.now();
@@ -671,6 +713,19 @@ async function swipeAct(id, status) {
   if (!c) return;
   const was = c.status;
   openSwipe = null;
+  // The row slides off, then its space closes up, and only then does the list redraw.
+  const el = document.querySelector(`.swipe[data-id="${CSS.escape(id)}"]`);
+  if (el) {
+    const dir = status === "canceled" ? 1 : -1;
+    setX(el, dir * el.offsetWidth, true);
+    await new Promise((r) => setTimeout(r, 220));
+    el.style.height = el.offsetHeight + "px";
+    void el.offsetHeight;
+    el.style.transition = `height .24s ${EASE}, opacity .24s`;
+    el.style.height = "0px";
+    el.style.opacity = "0";
+    await new Promise((r) => setTimeout(r, 240));
+  }
   await patch(id, { status });
   toast(`${id} moved to ${STATUS_NAMES[status]}`, false, { label: "Undo", run: () => patch(id, { status: was }) });
 }
@@ -680,6 +735,7 @@ async function swipeAct(id, status) {
 function openPalette(prompt) {
   S.pal = { mode: prompt ? "prompt" : "search", sel: 0, prompt: prompt || null, items: [] };
   $("#palette").hidden = false;
+  animate($("#palette"), "pal-in");
   const input = $("#pal-input");
   input.value = prompt && prompt.value ? prompt.value : "";
   input.placeholder = prompt ? prompt.placeholder : "Search cards or type a command";
@@ -816,6 +872,7 @@ function toast(msg, err, action) {
     t.appendChild(b);
   }
   t.hidden = false;
+  animate(t, "toast-in");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => (t.hidden = true), action ? 5000 : 2600);
 }
