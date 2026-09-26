@@ -28,6 +28,8 @@ type Project struct {
 	Prefix  string   `json:"prefix"`
 	Color   string   `json:"color"`
 	Aliases []string `json:"aliases"`
+	// Description says what work belongs here. Tools that sort incoming work read it.
+	Description string `json:"description"`
 }
 
 type View struct {
@@ -85,7 +87,7 @@ func loadBoard(dir string) (*Board, error) {
 		return nil, fmt.Errorf("projects.yml: %v", err)
 	}
 	for _, n := range nodes(doc, "projects") {
-		p := Project{Key: str(n, "key"), Name: str(n, "name"), Prefix: strings.ToUpper(str(n, "prefix")), Color: str(n, "color"), Aliases: strs(n, "aliases")}
+		p := Project{Key: str(n, "key"), Name: str(n, "name"), Prefix: strings.ToUpper(str(n, "prefix")), Color: str(n, "color"), Aliases: strs(n, "aliases"), Description: str(n, "description")}
 		if p.Key == "" || p.Prefix == "" {
 			return nil, fmt.Errorf("projects.yml: every project needs key and prefix")
 		}
