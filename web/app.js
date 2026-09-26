@@ -247,7 +247,8 @@ function renderPills() {
   const r = S.route;
   const pill = (hash, label, n, on, color) =>
     `<button class="pill ${on ? "on" : ""}" data-go="${hash}">${color ? `<span class="dot" style="background:${esc(color)}"></span>` : ""}${esc(label)}${n ? `<span class="n">${n}</span>` : ""}</button>`;
-  let h = pill("#/", "Home", 0, r.kind === "home");
+  let h = `<button class="pill icon" id="search" aria-label="Search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>`;
+  h += pill("#/", "Home", 0, r.kind === "home");
   const inbox = cards.filter((c) => c.project === "inbox" && OPEN(c)).length;
   if (inbox || r.kind === "inbox") h += pill("#/inbox", "Inbox", inbox, r.kind === "inbox");
   for (const p of S.data.projects.filter((p) => p.key !== "inbox")) {
@@ -275,7 +276,7 @@ function renderMain() {
   const p = r.kind === "project" ? project(r.key) : null;
   $("#title").innerHTML = (p ? `<span class="dot" style="background:${esc(p.color)}"></span>` : "") + esc(name) +
     (r.kind === "view" ? ` <span class="chip">${esc(S.data.views.find((v) => v.name === r.key)?.filter || "")}</span>` : "");
-  $("#top-actions").innerHTML = `<button class="btn icon" id="search" aria-label="Search"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button class="btn primary" id="new-card">New card</button>`;
+  $("#top-actions").innerHTML = `<button class="btn primary" id="new-card">New card</button>`;
 
   const br = S.data.broken;
   $("#broken").hidden = !br.length;
@@ -328,10 +329,10 @@ function renderMain() {
     let head = "";
     if (r.kind === "home") {
       const n = S.data.cards.filter((c) => c.project === "inbox" && OPEN(c)).length;
-      if (n) head = `<div class="hint">${n} card${n > 1 ? "s" : ""} in the <a href="#/inbox">Inbox</a> need a project.</div>`;
+      if (n) head = `<div class="hint"><a href="#/inbox">${n} in the Inbox</a> to file.</div>`;
     }
     if (r.kind === "inbox") {
-      head = `<div class="hint">New cards land here when nobody said which project they belong to. Tap a project under a card to move it there.</div>`;
+      head = `<div class="hint">Cards with no project yet. Open one to file it.</div>`;
     }
     const empty = {
       home: "Nothing to do.<br>Cards in Todo, In Progress and In Review show here.",
@@ -345,8 +346,6 @@ function renderMain() {
         const g = list.filter((c) => c.status === st);
         return g.length ? `<div class="group-head">${statusIcon(st)} ${STATUS_NAMES[st]} <span class="n">${g.length}</span></div>` + g.map((c) => row(c, true)).join("") : "";
       }).join("") + `</div>`;
-    } else if (r.kind === "inbox" && list.length) {
-      body = `<div class="list">` + list.map((c) => row(c, false) + movePills(c, "in-row")).join("") + `</div>`;
     } else if (list.length) {
       body = `<div class="list">` + list.map((c) => row(c, r.kind !== "inbox")).join("") + `</div>`;
     } else body = `<div class="empty">${empty}</div>`;
