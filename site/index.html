@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Track | Home</title>
+<meta name="description" content="A local task board for one person and their AI agents. Cards are markdown files in git. One Go binary, no dependencies, MIT.">
+<link rel="canonical" href="https://track.modul4r.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Track">
+<meta property="og:title" content="Track: a local task board for you and your agents">
+<meta property="og:description" content="Cards are markdown files in git. One Go binary, no dependencies, MIT.">
+<meta property="og:url" content="https://track.modul4r.com/">
+<meta property="og:image" content="https://track.modul4r.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Track: a local task board for you and your agents">
+<meta name="twitter:description" content="Cards are markdown files in git. One Go binary, no dependencies, MIT.">
+<meta name="twitter:image" content="https://track.modul4r.com/og.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://track.modul4r.com/#app",
+      "name": "Track",
+      "description": "A local task board for one person and their AI agents. Each card is a markdown file in a git repo. Agents use the track command with JSON output; people use a Linear-style web page with a command menu and arrow-key movement. One Go binary using only the standard library.",
+      "url": "https://track.modul4r.com/",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS, Linux",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "license": "https://github.com/FatherMarz/track/blob/main/LICENSE",
+      "downloadUrl": "https://github.com/FatherMarz/track",
+      "author": { "@id": "https://track.modul4r.com/#author" }
+    },
+    { "@type": "Person", "@id": "https://track.modul4r.com/#author", "name": "Marcello Delcaro", "url": "https://modul4r.com" },
+    { "@type": "WebSite", "@id": "https://track.modul4r.com/#site", "name": "Track", "url": "https://track.modul4r.com/", "about": { "@id": "https://track.modul4r.com/#app" } }
+  ]
+}
+</script>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%235e6ad2'/><rect x='14' y='16' width='10' height='32' rx='3' fill='%23fff'/><rect x='27' y='16' width='10' height='22' rx='3' fill='%23fff' opacity='.8'/><rect x='40' y='16' width='10' height='13' rx='3' fill='%23fff' opacity='.6'/></svg>">
+<style>
+  :root{
+    --bg:#0f0f11; --side:#131316; --panel:#17171b; --card:#1b1b20; --card-hover:#202027;
+    --line:#26262d; --text:#e6e6ea; --muted:#8a8f98; --faint:#5c6068;
+    --accent:#5e6ad2; --focus:#7c86e6; --urgent:#eb5757; --medium:#d9c85b; --green:#4cb782;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text)}
+  body{font:14px/1.6 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  a{color:var(--text);text-decoration:none;border-bottom:1px solid var(--line)}
+  a:hover{border-bottom-color:var(--focus)}
+  code,pre,kbd{font-family:"SF Mono",ui-monospace,Menlo,monospace}
+  kbd{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  header.hero{max-width:1080px;margin:0 auto;padding:64px 24px 28px;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:12px;font-size:34px;font-weight:650;letter-spacing:-.02em;margin:0}
+  .logo{width:30px;height:30px;border-radius:8px;background:var(--accent);display:inline-flex;gap:3px;align-items:flex-start;padding:7px 6px}
+  .logo i{width:4px;border-radius:1.5px;background:#fff}
+  .logo i:nth-child(1){height:16px}.logo i:nth-child(2){height:11px;opacity:.8}.logo i:nth-child(3){height:7px;opacity:.6}
+  .tag{color:var(--muted);font-size:16px;margin:10px 0 0;max-width:560px}
+  .btns{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{display:inline-block;padding:8px 14px;border:1px solid var(--line);border-radius:7px;background:var(--card);color:var(--text);font:inherit;font-size:13px;cursor:pointer}
+  .btn:hover{background:var(--card-hover);border-color:var(--line)}
+  .btn.primary{background:var(--accent);border-color:var(--accent)}
+  .btn.primary:hover{background:#6b76db}
+  .btn.done{border-color:var(--green);color:var(--green)}
+
+  /* The demo board */
+  .demo{max-width:1080px;margin:0 auto;padding:0 24px}
+  .app{display:flex;height:440px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg);box-shadow:0 30px 80px rgba(0,0,0,.45)}
+  .side{width:190px;flex:none;background:var(--side);border-right:1px solid var(--line);padding:14px 10px;font-size:13px}
+  .side .b{display:flex;align-items:center;gap:8px;font-weight:600;padding:2px 8px 14px}
+  .side .b span{width:14px;height:14px;border-radius:4px;background:var(--accent)}
+  .ni{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:6px;color:var(--muted)}
+  .ni.on{background:var(--card-hover);color:var(--text)}
+  .ni .c{margin-left:auto;font-size:11px;color:var(--faint)}
+  .nh{color:var(--faint);font-size:11px;padding:12px 8px 5px}
+  .dot{width:8px;height:8px;border-radius:3px;flex:none}
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .top{display:flex;align-items:center;gap:8px;padding:11px 16px;border-bottom:1px solid var(--line);font-weight:600;font-size:13px}
+  .top .k{margin-left:auto;font-weight:400;color:var(--faint);font-size:12px;display:flex;gap:6px;align-items:center}
+  .board{display:flex;gap:10px;padding:14px 16px;overflow:hidden;flex:1}
+  .col{width:220px;flex:none}
+  .ch{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:12.5px;font-weight:500;padding:2px 4px 9px}
+  .ch .n{color:var(--faint)}
+  .cards{display:flex;flex-direction:column;gap:6px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;transition:border-color .12s,box-shadow .12s}
+  .card.focus{border-color:var(--focus);box-shadow:0 0 0 1px var(--focus)}
+  .ct{display:flex;align-items:center;gap:6px;color:var(--faint);font-size:11px;margin-bottom:3px}
+  .chip{font-size:10.5px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:0 6px;display:inline-block;margin-top:6px}
+  .chip.agent{color:#b4bbf3;border-color:#3a3f6b}
+  .st{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--faint);display:inline-block;flex:none}
+  .st.todo{border-color:#b8bcc4}
+  .st.prog{border-color:var(--medium);background:conic-gradient(var(--medium) 0 50%,transparent 50% 100%)}
+  .st.rev{border-color:var(--green);background:conic-gradient(var(--green) 0 75%,transparent 75% 100%)}
+  .st.done{border-color:var(--accent);background:var(--accent)}
+  .pri{display:inline-flex;gap:1.5px;align-items:flex-end;height:10px}
+  .pri i{width:3px;background:var(--muted);border-radius:1px}
+  .pri i:nth-child(1){height:4px}.pri i:nth-child(2){height:7px}.pri i:nth-child(3){height:10px}
+  .urg{background:var(--urgent);color:#fff;font-size:9px;font-weight:700;border-radius:3px;width:12px;height:12px;display:inline-flex;align-items:center;justify-content:center}
+  .hint{max-width:1080px;margin:10px auto 0;padding:0 24px;color:var(--faint);font-size:12px;text-align:center}
+
+  main{max-width:780px;margin:0 auto;padding:30px 24px 80px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:.14em;color:var(--focus);margin:48px 0 12px;font-weight:600}
+  p{margin:10px 0}
+  p.small,li{color:var(--muted);font-size:14px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .cell{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+  .cell b{display:block;font-size:14px;margin-bottom:4px;font-weight:600}
+  .cell span{color:var(--muted);font-size:13.5px}
+  .codewrap{position:relative;margin:12px 0}
+  pre{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0;font-size:12.5px;line-height:1.75;white-space:pre-wrap;word-break:break-word;color:var(--text)}
+  pre .c{color:var(--faint)}
+  pre .a{color:#b4bbf3}
+  .copy{position:absolute;top:8px;right:8px;background:var(--card);border:1px solid var(--line);border-radius:6px;color:var(--muted);font:11px Inter,sans-serif;padding:3px 9px;cursor:pointer}
+  .copy:hover{color:var(--text)}
+  .copy.done{color:var(--green);border-color:var(--green)}
+  ul{padding-left:20px;margin:10px 0}
+  li{margin:6px 0}
+  li::marker{color:var(--focus)}
+  .a{color:#b4bbf3}
+  footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--faint)}
+  footer a{color:var(--faint);border:0}
+  footer a:hover{color:var(--text)}
+
+  @media (max-width:760px){
+    header.hero{padding-top:40px}
+    .side{display:none}
+    .app{height:400px}
+    .board{overflow-x:auto}
+    .col{width:78vw}
+    .grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div>
+    <h1 class="brand"><span class="logo"><i></i><i></i><i></i></span>Track</h1>
+    <p class="tag">A local task board for you and your AI agents. Every card is a markdown file in git. Agents use the command line. You use a fast board.</p>
+  </div>
+  <div class="btns">
+    <a class="btn primary" href="https://github.com/FatherMarz/track">GitHub →</a>
+    <button class="btn" id="llmcopy" type="button">Copy for LLM</button>
+  </div>
+</header>
+
+<section class="demo" aria-label="Track board demo">
+  <div class="app">
+    <aside class="side">
+      <div class="b"><span></span>Track</div>
+      <div class="ni">Home<span class="c">2</span></div>
+      <div class="ni">Inbox<span class="c">3</span></div>
+      <div class="nh">Projects</div>
+      <div class="ni on"><span class="dot" style="background:#5e6ad2"></span>Website<span class="c">6</span></div>
+      <div class="ni"><span class="dot" style="background:#26b5ce"></span>Clients<span class="c">4</span></div>
+      <div class="ni"><span class="dot" style="background:#d56ad9"></span>Life<span class="c">5</span></div>
+      <div class="nh">Views</div>
+      <div class="ni">Urgent</div>
+      <div class="ni">Agent work</div>
+    </aside>
+    <div class="main">
+      <div class="top"><span class="dot" style="background:#5e6ad2"></span>Website<span class="k"><kbd>⌘K</kbd> commands <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> move</span></div>
+      <div class="board" id="board">
+        <div class="col"><div class="ch"><span class="st todo"></span>Todo <span class="n">3</span></div><div class="cards">
+          <div class="card"><div class="ct">WEB-14 <span class="urg">!</span></div>Fix the login timeout on Safari<br><span class="chip">bug</span></div>
+          <div class="card"><div class="ct">WEB-12 <span class="pri"><i></i><i></i><i></i></span></div>Write the pricing page copy</div>
+          <div class="card"><div class="ct">WEB-9</div>Swap the hero image for the new logo<br><span class="chip">design</span></div>
+        </div></div>
+        <div class="col"><div class="ch"><span class="st prog"></span>In Progress <span class="n">2</span></div><div class="cards">
+          <div class="card"><div class="ct">WEB-11 <span class="pri"><i></i><i></i><i></i></span></div>Move the blog to the new CMS<br><span class="chip agent">@agent</span></div>
+          <div class="card"><div class="ct">WEB-8</div>Add the sitemap and llms.txt<br><span class="chip agent">@agent</span></div>
+        </div></div>
+        <div class="col"><div class="ch"><span class="st rev"></span>In Review <span class="n">1</span></div><div class="cards">
+          <div class="card"><div class="ct">WEB-10</div>Compress every image under 200 KB<br><span class="chip agent">@agent</span> <span class="chip">perf</span></div>
+        </div></div>
+        <div class="col"><div class="ch"><span class="st done"></span>Done <span class="n">1</span></div><div class="cards">
+          <div class="card"><div class="ct">WEB-7</div>Point the domain at the new host</div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<p class="hint">This is a demo. Click it, then use the arrow keys.</p>
+
+<main>
+  <h2>Quick start</h2>
+  <div class="codewrap"><pre><code>go install github.com/FatherMarz/track@latest
+
+track init ~/track-data                  <span class="c"># your cards live here, in their own git repo</span>
+track add web "Fix the login timeout" --priority urgent
+track list                               <span class="c"># open cards, add --json for agents</span>
+track move WEB-14 in-progress
+track serve                              <span class="c"># the board on http://127.0.0.1:4747</span></code></pre></div>
+
+  <div class="grid">
+    <div class="cell"><b>Agent first</b><span>Every command has <span class="a">--json</span> output. Every change is a git commit that says who made it.</span></div>
+    <div class="cell"><b>Readable by hand</b><span>One markdown file per card. Open it in any editor. Track sees the change and commits it.</span></div>
+    <div class="cell"><b>Local only</b><span>One Go binary built on the standard library. No npm, no database, no account, no cloud.</span></div>
+    <div class="cell"><b>Built like Linear</b><span>Projects, six columns, priorities, labels, a ⌘K command menu, saved views and arrow keys.</span></div>
+  </div>
+
+  <h2>A card is a file</h2>
+  <div class="codewrap"><pre><code><span class="c">---</span>
+<span class="a">id:</span> WEB-14
+<span class="a">title:</span> Fix the login timeout on Safari
+<span class="a">status:</span> in-progress
+<span class="a">priority:</span> urgent
+<span class="a">labels:</span> [bug]
+<span class="a">assignee:</span> agent
+<span class="c">---</span>
+
+The session cookie expires after 5 minutes on Safari only.
+
+## Activity
+- 2026-09-25 14:03 me: created
+- 2026-09-25 16:40 agent: todo → in-progress
+- 2026-09-25 16:41 agent noted: The cookie has no SameSite value.</code></pre></div>
+  <p class="small">Your code and your cards stay apart. The program holds nothing about your work. Your cards live in a separate git repo that you can push to a private remote for backup.</p>
+
+  <h2>On your phone, and by voice</h2>
+  <p class="small">The board has a phone layout. Put it on your private network with <span class="a">tailscale serve</span> and it stays off the open internet. Send spoken words to <span class="a">/api/capture</span> from an iOS Shortcut: "fix the login bug under website" becomes a card in the Website project.</p>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Columns: Backlog, Todo, In Progress, In Review, Done, Canceled. Priority: urgent, high, medium, low, none.</li>
+    <li>Cards with no project land in the built-in Inbox.</li>
+    <li>If Track cannot read a card you edited by hand, it flags that card. It never drops it.</li>
+    <li>The page updates by itself when an agent changes a card.</li>
+    <li>One person, one board. No accounts, no teams, no sync server.</li>
+  </ul>
+
+  <footer>
+    <span>MIT · Open Source</span>
+    <a href="https://modul4r.com/work">modul4r.com</a>
+  </footer>
+</main>
+
+<script>
+  const LLM_TEXT = `Set up Track, a local task board for one person and their AI agents (https://github.com/FatherMarz/track), on this machine.
+
+1. Install it: go install github.com/FatherMarz/track@latest
+   If Go is not installed, clone https://github.com/FatherMarz/track and build with: go build -o track .
+2. Make the data repo: track init ~/track-data
+   This makes a git repo for the cards and remembers its path in ~/.config/track/config.yml.
+3. Ask your user which projects they want. Write them into ~/track-data/projects.yml:
+   projects:
+     - key: web
+       name: Website
+       prefix: WEB
+       color: "#5e6ad2"
+       aliases: [website, site]
+4. Start the board: track serve (http://127.0.0.1:4747). Keep it running, for example with launchd or systemd.
+5. Always change cards with the track command, never by editing the card files:
+   track add <project> "<title>" --priority high --as agent
+   track list --json
+   track move <ID> in-progress --as agent
+   track note <ID> "<text>" --as agent
+   Statuses: backlog, todo, in-progress, in-review, done, canceled.
+6. Before you add a card, run track list --filter "<key words>" and do not add a duplicate.
+7. Optional backup: add a private git remote to ~/track-data and run track sync.
+
+Full README: https://github.com/FatherMarz/track`;
+
+  function flash(btn, label){
+    const old = btn.textContent;
+    btn.textContent = label; btn.classList.add("done");
+    setTimeout(() => { btn.textContent = old; btn.classList.remove("done"); }, 1600);
+  }
+  document.getElementById("llmcopy").addEventListener("click", async (e) => {
+    await navigator.clipboard.writeText(LLM_TEXT);
+    flash(e.target, "Copied");
+  });
+  document.querySelectorAll(".codewrap").forEach((wrap) => {
+    const btn = document.createElement("button");
+    btn.className = "copy"; btn.type = "button"; btn.textContent = "Copy";
+    btn.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(wrap.querySelector("pre").innerText);
+      flash(btn, "Copied");
+    });
+    wrap.appendChild(btn);
+  });
+
+  // The demo board answers the arrow keys once it has been clicked.
+  const cols = [...document.querySelectorAll("#board .col")].map((c) => [...c.querySelectorAll(".card")]);
+  let f = { c: 0, r: 0 }, active = false;
+  function paint(){
+    document.querySelectorAll("#board .card").forEach((el) => el.classList.remove("focus"));
+    cols[f.c][f.r].classList.add("focus");
+  }
+  paint();
+  document.querySelector(".app").addEventListener("click", (e) => {
+    active = true;
+    const card = e.target.closest(".card");
+    if (card) cols.forEach((col, c) => col.forEach((el, r) => { if (el === card) f = { c, r }; }));
+    paint();
+  });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".app")) active = false; });
+  document.addEventListener("keydown", (e) => {
+    if (!active) return;
+    const m = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
+    if (!m) return;
+    e.preventDefault();
+    const c = Math.max(0, Math.min(cols.length - 1, f.c + m[0]));
+    f = { c, r: Math.max(0, Math.min(cols[c].length - 1, (m[0] ? Math.min(f.r, cols[c].length - 1) : f.r + m[1]))) };
+    paint();
+  });
+</script>
+</body>
+</html>

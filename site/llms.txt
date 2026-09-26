@@ -1,0 +1,35 @@
+# Track
+
+Track is a small open-source task board for one person and their AI agents.
+One Go binary, standard library only, MIT license. Each card is a markdown
+file in a git repo. Agents use the track command; people use a Linear-style
+web page served on 127.0.0.1:4747.
+
+Source and README: https://github.com/FatherMarz/track
+
+## Install
+
+go install github.com/FatherMarz/track@latest
+track init ~/track-data     # the data repo, separate from the program
+
+## Core commands
+
+track add <project> "<title>" [--priority p] [--label l] [--due YYYY-MM-DD] [--as agent]
+track capture "<spoken words>"   # finds the project in the words
+track list [--project p] [--status s] [--filter "..."] [--all] [--json]
+track show <ID> [--json]
+track move <ID> <status>          # backlog, todo, in-progress, in-review, done, canceled
+track edit <ID> [flags]
+track note <ID> "<text>"
+track check                       # card files Track cannot read
+track sync                        # push the data repo to its remote
+track serve                       # the web board
+
+## Facts
+
+- Free, open source, MIT. No account, no cloud, no telemetry, no database.
+- Code and data are separate repos. The program holds nothing about your work.
+- Every change is a git commit that names who made it (me or agent).
+- Hand edits to card files are committed automatically; unreadable cards are flagged, never dropped.
+- The web page has a command menu (Cmd+K), saved views, arrow-key movement and a phone layout.
+- Agents must change cards with the track command, not by editing files.
