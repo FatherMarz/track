@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f11">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Track">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+<title>Track | Home</title>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <div class="brand"><span class="logo"></span>Track</div>
+    <nav id="nav"></nav>
+    <button class="kbd-hint" id="open-palette"><span>Search and commands</span><kbd>⌘K</kbd></button>
+  </aside>
+  <main id="main">
+    <header id="top">
+      <button id="menu" aria-label="Menu">☰</button>
+      <h1 id="title"></h1>
+      <div id="top-actions"></div>
+    </header>
+    <div id="broken" hidden></div>
+    <section id="content"></section>
+  </main>
+  <div id="panel" hidden></div>
+</div>
+<div id="palette" hidden>
+  <div class="pal-box">
+    <input id="pal-input" autocomplete="off" spellcheck="false">
+    <div id="pal-list"></div>
+  </div>
+</div>
+<div id="toast" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>
