@@ -205,7 +205,11 @@ kbd { font-family: inherit; font-size: 11px; color: var(--muted); border: 1px so
 @media (max-width: 760px) {
   /* The pills say where you are, so the title bar goes. */
   #top { display: none; }
-  #pills { display: flex; gap: 7px; overflow-x: auto; padding: max(10px, env(safe-area-inset-top)) 12px 10px; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+  /* The phone's clock and status icons sit over the top of the page. Clear them
+     fully, then add room, so the pills never sit under the blur. */
+  #pills { display: flex; gap: 7px; overflow-x: auto; padding: calc(env(safe-area-inset-top) + 12px) 12px 10px; background: var(--bg); border-bottom: 1px solid var(--line); scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); }
+  #pills::after { content: ""; flex: none; width: 24px; }
   #pills::-webkit-scrollbar { display: none; }
   #fab { display: flex; align-items: center; justify-content: center; position: fixed; right: 18px; bottom: max(22px, calc(env(safe-area-inset-bottom) + 10px)); width: 56px; height: 56px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; font-size: 30px; font-weight: 300; line-height: 1; box-shadow: 0 8px 24px rgba(0, 0, 0, .45); z-index: 14; }
   #panel:not([hidden]) ~ #fab, body:has(#panel:not([hidden])) #fab { display: none; }
