@@ -16,6 +16,20 @@ const OPEN = (c) => c.status !== "done" && c.status !== "canceled";
 const PHONE = matchMedia("(max-width: 760px)");
 PHONE.addEventListener("change", () => render());
 const $ = (s) => document.querySelector(s);
+
+// Phone list groups fold on a tap. Done starts folded. The phone remembers the choice.
+const FOLD = (() => { try { return JSON.parse(localStorage.getItem("track.fold")) || {}; } catch { return {}; } })();
+const folded = (key) => (key in FOLD ? FOLD[key] : key === "done");
+function toggleFold(key) {
+  FOLD[key] = !folded(key);
+  localStorage.setItem("track.fold", JSON.stringify(FOLD));
+  render();
+}
+function groupHead(key, label, n, icon) {
+  const f = folded(key);
+  return `<button class="group-head" data-fold="${key}" aria-expanded="${!f}">${icon || ""}<span>${label}</span><span class="n">${n}</span>` +
+    `<svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
+}
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
 
 // ---------- data ----------
@@ -302,7 +316,12 @@ function renderMain() {
   const f = focused();
 
   const row = (c, showProject) => {
-    const inner = `
+    const inner = PHONE.matches ? `
+      <div class="row m ${OPEN(c) ? "" : "closed"}" data-id="${esc(c.id)}">
+        ${statusIcon(c.status)}
+        <div class="rb"><span class="t">${esc(c.title)}</span>
+          <span class="meta">${priIcon(c.priority)}<span class="id">${esc(c.id)}</span>${metaChips(c, "opt")}${showProject ? projChip(c) : ""}</span></div>
+      </div>` : `
       <div class="row ${f && f.id === c.id ? "focus" : ""}" data-id="${esc(c.id)}">
         ${statusIcon(c.status)} ${priIcon(c.priority) || `<span style="width:13px"></span>`}
         <span class="id">${esc(c.id)}</span><span class="t">${esc(c.title)}</span>
@@ -319,8 +338,8 @@ function renderMain() {
     const order = ["in-progress", "in-review", "todo", "backlog", "done"];
     const groups = order.map((st) => cols.find((col) => col.status === st)).filter((col) => col.cards.length);
     $("#content").innerHTML = groups.length ? `<div class="list">` + groups.map((col) =>
-      `<div class="group-head">${statusIcon(col.status)} ${STATUS_NAMES[col.status]} <span class="n">${col.cards.length}</span></div>` +
-      (col.status === "done" ? col.cards.slice(0, 10) : col.cards).map((c) => row(c, false)).join("")).join("") + `</div>`
+      groupHead(col.status, STATUS_NAMES[col.status], col.cards.length, statusIcon(col.status)) +
+      (folded(col.status) ? "" : (col.status === "done" ? col.cards.slice(0, 10) : col.cards).map((c) => row(c, false)).join(""))).join("") + `</div>`
       : `<div class="empty">No cards yet.</div>`;
   } else if (r.kind === "project") {
     $("#content").innerHTML = `<div class="board">` + cols.map((col, ci) => `
@@ -350,10 +369,10 @@ function renderMain() {
       // Grouped by status, so the one thing you are doing is not lost among the rest.
       const inbox = list.filter((c) => c.project === "inbox");
       body = `<div class="list">` +
-        (inbox.length ? `<div class="group-head">Inbox <span class="n">${inbox.length}</span></div>` + inbox.map((c) => row(c, false)).join("") : "") +
+        (inbox.length ? groupHead("inbox", "Inbox", inbox.length) + (folded("inbox") ? "" : inbox.map((c) => row(c, false)).join("")) : "") +
         HOME.map((st) => {
           const g = list.filter((c) => c.project !== "inbox" && c.status === st);
-          return g.length ? `<div class="group-head">${statusIcon(st)} ${STATUS_NAMES[st]} <span class="n">${g.length}</span></div>` + g.map((c) => row(c, true)).join("") : "";
+          return g.length ? groupHead(st, STATUS_NAMES[st], g.length, statusIcon(st)) + (folded(st) ? "" : g.map((c) => row(c, true)).join("")) : "";
         }).join("") + `</div>`;
     } else if (list.length) {
       body = `<div class="list">` + list.map((c) => row(c, r.kind !== "inbox")).join("") + `</div>`;
@@ -474,6 +493,8 @@ function openCard(id) {
 
 document.addEventListener("click", (e) => {
   const t = e.target;
+  const fold = t.closest("[data-fold]");
+  if (fold) return toggleFold(fold.dataset.fold);
   const goEl = t.closest("[data-go]");
   if (goEl) return go(goEl.dataset.go);
   if (t.closest("#menu")) return document.getElementById("app").classList.toggle("menu-open");
