@@ -549,6 +549,39 @@ document.addEventListener("click", (e) => {
   if (!t.closest("#side") && !t.closest("#menu")) document.getElementById("app").classList.remove("menu-open");
 });
 
+// Right-click a card or row to change its status without opening it.
+function closeCtx() { $("#ctx").hidden = true; }
+document.addEventListener("contextmenu", (e) => {
+  const el = e.target.closest(".card[data-id], .row[data-id]");
+  const c = el && card(el.dataset.id);
+  if (!c) return closeCtx();
+  e.preventDefault();
+  const m = $("#ctx");
+  m.innerHTML = `<div class="ctx-head">${esc(c.id)} · Status</div>` + S.data.statuses.map((st) =>
+    `<button data-ctx="${st}" data-id="${esc(c.id)}" class="${st === c.status ? "on" : ""}">${statusIcon(st)} ${STATUS_NAMES[st]}</button>`).join("");
+  m.hidden = false;
+  m.style.left = Math.min(e.clientX, innerWidth - m.offsetWidth - 8) + "px";
+  m.style.top = Math.min(e.clientY, innerHeight - m.offsetHeight - 8) + "px";
+});
+document.addEventListener("click", (e) => {
+  if ($("#ctx").hidden) return;
+  const b = e.target.closest("[data-ctx]");
+  closeCtx();
+  if (!b) return;
+  e.stopImmediatePropagation();
+  const c = card(b.dataset.id);
+  const st = b.dataset.ctx;
+  if (!c || c.status === st) return;
+  const was = c.status;
+  patch(c.id, { status: st }).then(() => {
+    focusCard(c.id); render();
+    toast(`${c.id} moved to ${STATUS_NAMES[st]}`, false, { label: "Undo", run: () => patch(c.id, { status: was }) });
+  });
+}, true);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#ctx").hidden) { e.stopImmediatePropagation(); closeCtx(); } }, true);
+addEventListener("scroll", closeCtx, true);
+addEventListener("resize", closeCtx);
+
 // Panel edits save when a field changes or loses focus.
 document.addEventListener("change", (e) => {
   const f = e.target.dataset && e.target.dataset.f;
