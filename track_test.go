@@ -117,3 +117,21 @@ func TestCapture(t *testing.T) {
 		}
 	}
 }
+
+func TestReorder(t *testing.T) {
+	dir := testRepo(t)
+	Create(dir, "web", "One", Patch{}, "me")
+	Create(dir, "web", "Two", Patch{}, "me")
+	bl := "backlog"
+	Create(dir, "web", "Three", Patch{Status: &bl}, "me")
+	if err := Reorder(dir, "todo", []string{"WEB-3", "WEB-2", "WEB-1"}, "me"); err != nil {
+		t.Fatal(err)
+	}
+	b, _ := loadBoard(dir)
+	for id, want := range map[string]int{"WEB-3": 1, "WEB-2": 2, "WEB-1": 3} {
+		c, _ := b.card(id)
+		if c.Rank != want || c.Status != "todo" {
+			t.Errorf("%s: rank %d status %s, want rank %d todo", id, c.Rank, c.Status, want)
+		}
+	}
+}

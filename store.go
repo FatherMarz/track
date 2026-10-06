@@ -46,6 +46,7 @@ type Card struct {
 	Assignee string   `json:"assignee"`
 	Parent   string   `json:"parent"`
 	Due      string   `json:"due"`
+	Rank     int      `json:"rank"`
 	Created  string   `json:"created"`
 	Updated  string   `json:"updated"`
 	Body     string   `json:"body"`
@@ -196,6 +197,7 @@ func readCard(path string) (*Card, error) {
 		Parent: str(doc, "parent"), Due: str(doc, "due"), Created: str(doc, "created"),
 		Updated: str(doc, "updated"), Path: path, Activity: []string{},
 	}
+	c.Rank, _ = strconv.Atoi(str(doc, "rank"))
 	if c.ID == "" || c.Title == "" {
 		return nil, errors.New("card needs id and title")
 	}
@@ -240,6 +242,9 @@ func (c *Card) render() string {
 	}
 	if c.Due != "" {
 		fmt.Fprintf(&s, "due: %s\n", c.Due)
+	}
+	if c.Rank != 0 {
+		fmt.Fprintf(&s, "rank: %d\n", c.Rank)
 	}
 	fmt.Fprintf(&s, "created: %s\n", quoteMini(c.Created))
 	fmt.Fprintf(&s, "updated: %s\n", quoteMini(c.Updated))
@@ -415,6 +420,48 @@ func Update(dir, id string, p Patch, actor string) (*Card, error) {
 		return commit(dir, fmt.Sprintf("%s: %s (%s)", c.ID, strings.Join(changes, ", "), actor))
 	})
 	return out, err
+}
+
+// Reorder sets the hand-made order of one status group. The cards are listed top
+// to bottom. A card that comes from another group also takes the new status.
+func Reorder(dir, status string, ids []string, actor string) error {
+	st, err := normStatus(status)
+	if err != nil {
+		return err
+	}
+	return withLock(dir, func() error {
+		b, err := loadBoard(dir)
+		if err != nil {
+			return err
+		}
+		t := now()
+		var moved []string
+		for i, id := range ids {
+			c, ok := b.card(id)
+			if !ok {
+				return fmt.Errorf("no card %s", id)
+			}
+			changed := c.Rank != i+1
+			c.Rank = i + 1
+			if c.Status != st {
+				c.Activity = append(c.Activity, t+" "+actor+": "+c.Status+" → "+st)
+				c.Status = st
+				c.Updated = t
+				moved = append(moved, c.ID)
+				changed = true
+			}
+			if changed {
+				if err := b.writeCard(c); err != nil {
+					return err
+				}
+			}
+		}
+		msg := "reorder " + st
+		if len(moved) > 0 {
+			msg += ", " + strings.Join(moved, ", ") + " → " + st
+		}
+		return commit(dir, msg+" ("+actor+")")
+	})
 }
 
 func applyPatch(b *Board, c *Card, p Patch, actor, t string) ([]string, error) {

@@ -17,9 +17,9 @@ const PHONE = matchMedia("(max-width: 760px)");
 PHONE.addEventListener("change", () => render());
 const $ = (s) => document.querySelector(s);
 
-// Phone list groups fold on a tap. Done starts folded. The phone remembers the choice.
+// List groups fold on a tap. Done starts folded. The phone remembers the choice.
 const FOLD = (() => { try { return JSON.parse(localStorage.getItem("track.fold")) || {}; } catch { return {}; } })();
-const folded = (key) => (key in FOLD ? FOLD[key] : key === "done");
+const folded = (key) => (key in FOLD ? FOLD[key] : key === "done" || key === "canceled");
 function toggleFold(key) {
   FOLD[key] = !folded(key);
   localStorage.setItem("track.fold", JSON.stringify(FOLD));
@@ -30,6 +30,7 @@ function groupHead(key, label, n, icon) {
   return `<button class="group-head" data-fold="${key}" aria-expanded="${!f}">${icon || ""}<span>${label}</span><span class="n">${n}</span>` +
     `<svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
 }
+const GRIP = `<span class="grip" aria-label="Drag to reorder"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg></span>`;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
 
 // ---------- data ----------
@@ -119,6 +120,13 @@ function matches(c, filter) {
 
 const byPriority = (a, b) => PRI_ORDER[a.priority] - PRI_ORDER[b.priority] || (b.updated > a.updated ? 1 : -1);
 const byUpdated = (a, b) => (b.updated > a.updated ? 1 : -1);
+// The order you set by hand wins. Cards you have not placed yet sit on top, by priority.
+const byRank = (a, b) => (!a.rank && !b.rank ? byPriority(a, b) : !a.rank ? -1 : !b.rank ? 1 : a.rank - b.rank);
+
+// Projects open as a list. The Board stays one click away and the choice is remembered.
+const listMode = () => S.route.kind === "project" && (PHONE.matches || localStorage.getItem("track.view") !== "board");
+const LIST_ORDER = ["in-progress", "in-review", "todo", "backlog", "done", "canceled"];
+const CLOSED = (st) => st === "done" || st === "canceled";
 
 // ---------- routing ----------
 
@@ -183,10 +191,10 @@ function layout() {
   const cards = S.data.cards;
   const r = S.route;
   if (r.kind === "project") {
-    return S.data.statuses.map((st) => {
-      const list = cards.filter((c) => c.project === r.key && c.status === st);
-      return { status: st, cards: list.sort(st === "done" || st === "canceled" ? byUpdated : byPriority) };
-    });
+    const cols = projectCols(r.key);
+    if (!listMode()) return cols;
+    // The list is one column in screen order, so the arrow keys walk it top to bottom.
+    return [{ cards: listGroups(cols).flatMap((g) => (folded(g.status) ? [] : shown(g))) }];
   }
   if (r.kind === "inbox") return [{ cards: cards.filter((c) => c.project === "inbox" && OPEN(c)).sort(byUpdated) }];
   if (r.kind === "view") {
@@ -208,6 +216,13 @@ const homeCards = (cards) => [
 ];
 const byHome = (a, b) => HOME.indexOf(a.status) - HOME.indexOf(b.status) || byDue(a, b) || byPriority(a, b);
 const byDue = (a, b) => (a.due || "9999") < (b.due || "9999") ? -1 : (a.due || "9999") > (b.due || "9999") ? 1 : 0;
+
+const projectCols = (key) => S.data.statuses.map((st) => {
+  const list = S.data.cards.filter((c) => c.project === key && c.status === st);
+  return { status: st, cards: list.sort(CLOSED(st) ? byUpdated : byRank) };
+});
+const listGroups = (cols) => LIST_ORDER.map((st) => cols.find((col) => col.status === st)).filter((col) => col && col.cards.length);
+const shown = (g) => (g.status === "done" ? g.cards.slice(0, 10) : g.cards);
 
 function focused() {
   const cols = layout();
@@ -299,7 +314,8 @@ function renderMain() {
   const p = r.kind === "project" ? project(r.key) : null;
   $("#title").innerHTML = (p ? `<span class="dot" style="background:${esc(p.color)}"></span>` : "") + esc(name) +
     (r.kind === "view" ? ` <span class="chip">${esc(S.data.views.find((v) => v.name === r.key)?.filter || "")}</span>` : "");
-  $("#top-actions").innerHTML = `<button class="btn primary" id="new-card">New card</button>`;
+  $("#top-actions").innerHTML = (p && !PHONE.matches ? `<button class="btn" id="view-switch">${listMode() ? "Board" : "List"}</button>` : "") +
+    `<button class="btn primary" id="new-card">New card</button>`;
 
   const br = S.data.broken;
   $("#broken").hidden = !br.length;
@@ -315,31 +331,36 @@ function renderMain() {
   S.focus.r = Math.max(0, Math.min(S.focus.r, cols[S.focus.c].cards.length - 1));
   const f = focused();
 
+  const sortable = r.kind === "project" && listMode();
   const row = (c, showProject) => {
+    // The outermost element of each row carries data-sort, so a drag moves the whole thing.
+    const wrapped = PHONE.matches && OPEN(c);
+    const tag = sortable && !wrapped ? ` data-sort="${esc(c.id)}"` : "";
     const inner = PHONE.matches ? `
-      <div class="row m ${OPEN(c) ? "" : "closed"}" data-id="${esc(c.id)}">
+      <div class="row m ${OPEN(c) ? "" : "closed"}" data-id="${esc(c.id)}"${tag}>
         ${statusIcon(c.status)}
         <div class="rb"><span class="t">${esc(c.title)}</span>
           <span class="meta">${priIcon(c.priority)}<span class="id">${esc(c.id)}</span>${metaChips(c, "opt")}${showProject ? projChip(c) : ""}</span></div>
+        ${sortable ? GRIP : ""}
       </div>` : `
-      <div class="row ${f && f.id === c.id ? "focus" : ""}" data-id="${esc(c.id)}">
+      <div class="row ${f && f.id === c.id ? "focus" : ""}" data-id="${esc(c.id)}"${tag}>
         ${statusIcon(c.status)} ${priIcon(c.priority) || `<span style="width:13px"></span>`}
         <span class="id">${esc(c.id)}</span><span class="t">${esc(c.title)}</span>
         <span class="chips">${metaChips(c, "opt")}${showProject ? projChip(c) : ""}</span>
       </div>`;
-    if (!PHONE.matches || !OPEN(c)) return inner;
-    return `<div class="swipe" data-id="${esc(c.id)}">
+    if (!wrapped) return inner;
+    return `<div class="swipe" data-id="${esc(c.id)}"${sortable ? ` data-sort="${esc(c.id)}"` : ""}>
         <div class="sw-left"><button data-sw="canceled">Cancel</button></div>
         <div class="sw-right">${c.status !== "in-progress" ? `<button data-sw="in-progress">Start</button>` : ""}<button data-sw="done">Done</button></div>
         ${inner}</div>`;
   };
-  // On a phone a project reads as one list, grouped by status, with the active work first.
-  if (r.kind === "project" && PHONE.matches) {
-    const order = ["in-progress", "in-review", "todo", "backlog", "done"];
-    const groups = order.map((st) => cols.find((col) => col.status === st)).filter((col) => col.cards.length);
-    $("#content").innerHTML = groups.length ? `<div class="list">` + groups.map((col) =>
+  // A project reads as one list, grouped by status, with the active work first.
+  // Drag a row to put it in your own order, or into another group to change its status.
+  if (r.kind === "project" && listMode()) {
+    const groups = listGroups(projectCols(r.key));
+    $("#content").innerHTML = groups.length ? `<div class="list sortable">` + groups.map((col) =>
       groupHead(col.status, STATUS_NAMES[col.status], col.cards.length, statusIcon(col.status)) +
-      (folded(col.status) ? "" : (col.status === "done" ? col.cards.slice(0, 10) : col.cards).map((c) => row(c, false)).join(""))).join("") + `</div>`
+      (folded(col.status) ? "" : shown(col).map((c) => row(c, false)).join(""))).join("") + `</div>`
       : `<div class="empty">No cards yet.</div>`;
   } else if (r.kind === "project") {
     $("#content").innerHTML = `<div class="board">` + cols.map((col, ci) => `
@@ -459,6 +480,8 @@ function renderPanel() {
 
 function render() {
   if (!S.data) return;
+  // A redraw mid-drag would pull the row out from under the pointer. The drop redraws.
+  if (sort && sort.on) return;
   renderNav();
   renderPills();
   renderMain();
@@ -505,6 +528,11 @@ document.addEventListener("click", (e) => {
   if (openSwipe) { closeSwipe(); if (t.closest(".swipe")) return; }
   if (t.closest("#new-card") || t.closest("#fab")) return PHONE.matches ? openSheet() : newCardPrompt();
   if (t.closest("#search")) return openPalette();
+  if (t.closest("#view-switch")) {
+    localStorage.setItem("track.view", listMode() ? "board" : "list");
+    S.focus = { c: 0, r: 0 };
+    return render();
+  }
   if (t.closest("[data-sheet-close]") || t.id === "sheet") return closeSheet();
   const pk = t.closest("[data-pick]");
   if (pk) { pk.parentElement.querySelectorAll(".on").forEach((x) => x.classList.remove("on")); pk.classList.add("on"); return; }
@@ -514,7 +542,7 @@ document.addEventListener("click", (e) => {
   if (add) return PHONE.matches ? openSheet(S.route.key, add.dataset.add) : newCardPrompt(S.route.key, add.dataset.add);
   const el = t.closest(".card, .row");
   if (el) {
-    if (Date.now() - swipedAt < 400) return;
+    if (Date.now() - swipedAt < 400 || Date.now() - sortedAt < 400) return;
     focusCard(el.dataset.id);
     return showCard(el.dataset.id);
   }
@@ -593,7 +621,7 @@ document.addEventListener("keydown", (e) => {
       const d = e.key === "ArrowRight" ? 1 : -1;
       if (e.shiftKey && S.route.kind === "project") {
         const c = focused();
-        const st = S.data.statuses[f.c + d];
+        const st = c && S.data.statuses[S.data.statuses.indexOf(c.status) + d];
         if (c && st) {
           e.preventDefault();
           patch(c.id, { status: st }).then(() => { focusCard(c.id); render(); });
@@ -660,6 +688,99 @@ $("#sheet-title").addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeSheet();
 });
 
+// ---------- reorder (list) ----------
+// Drag a row with the mouse, or by its grip on the phone. A line shows where it
+// will land. Dropping it in another group also changes its status.
+
+let sort = null;
+let sortedAt = 0;
+
+document.addEventListener("pointerdown", (e) => {
+  const list = e.target.closest(".list.sortable");
+  if (!list || e.button !== 0) return;
+  const grip = e.target.closest(".grip");
+  if (e.pointerType !== "mouse" && !grip) return;
+  const el = e.target.closest("[data-sort]");
+  if (!el) return;
+  const sc = $("#content");
+  sort = { el, list, sc, id: el.dataset.sort, pid: e.pointerId, y0: e.clientY, y: e.clientY, scroll0: sc.scrollTop, on: false, raf: 0, line: null };
+  if (grip) { e.preventDefault(); beginSort(); }
+});
+
+function beginSort() {
+  sort.on = true;
+  closeSwipe();
+  getSelection().removeAllRanges();
+  sort.el.classList.add("lifting");
+  document.body.classList.add("sorting");
+  sort.line = document.createElement("div");
+  sort.line.className = "drop-line";
+}
+
+document.addEventListener("pointermove", (e) => {
+  if (!sort || e.pointerId !== sort.pid) return;
+  if (!document.body.contains(sort.el)) { sort = null; return; }
+  sort.y = e.clientY;
+  if (!sort.on) {
+    if (Math.abs(e.clientY - sort.y0) < 6) return;
+    beginSort();
+  }
+  e.preventDefault();
+  if (!sort.raf) sort.raf = requestAnimationFrame(sortFrame);
+}, { passive: false });
+
+function sortFrame() {
+  const s = sort;
+  if (!s) return;
+  s.raf = 0;
+  // Near the top or bottom edge the list scrolls by itself.
+  const box = s.sc.getBoundingClientRect();
+  const edge = 56;
+  const v = s.y < box.top + edge ? -(box.top + edge - s.y) / 3 : s.y > box.bottom - edge ? (s.y - box.bottom + edge) / 3 : 0;
+  if (v) { s.sc.scrollTop += v; s.raf = requestAnimationFrame(sortFrame); }
+  s.el.style.transform = `translateY(${s.y - s.y0 + s.sc.scrollTop - s.scroll0}px)`;
+  const items = [...s.list.querySelectorAll("[data-sort], .group-head")].filter((x) => x !== s.el);
+  let before = items.find((x) => { const b = x.getBoundingClientRect(); return s.y < b.top + b.height / 2; }) || null;
+  // Above the first group still means the top of the first group.
+  if (before && before === items[0] && before.classList.contains("group-head")) before = before.nextElementSibling;
+  if (before === s.line) return;
+  s.list.insertBefore(s.line, before);
+}
+
+async function endSort(e) {
+  const s = sort;
+  if (!s || e.pointerId !== s.pid) return;
+  if (!s.on) { sort = null; return; }
+  // Place the line for the final spot, in case the last move has not drawn yet.
+  if (s.raf) cancelAnimationFrame(s.raf);
+  sortFrame();
+  if (s.raf) cancelAnimationFrame(s.raf);
+  sort = null;
+  sortedAt = Date.now();
+  document.body.classList.remove("sorting");
+  s.el.classList.remove("lifting");
+  s.el.style.transform = "";
+  let head = null, idx = 0;
+  for (let x = s.line.previousElementSibling; x; x = x.previousElementSibling) {
+    if (x.classList.contains("group-head")) { head = x; break; }
+    if (x !== s.el && x.dataset.sort) idx++;
+  }
+  s.line.remove();
+  const c = card(s.id);
+  if (e.type === "pointercancel" || !head || !c) return render();
+  const st = head.dataset.fold;
+  // Done and Canceled keep the newest first, so a drop there only changes the status.
+  if (CLOSED(st)) return c.status === st ? render() : patch(c.id, { status: st });
+  const ids = projectCols(c.project).find((col) => col.status === st).cards.map((x) => x.id).filter((id) => id !== c.id);
+  ids.splice(idx, 0, c.id);
+  ids.forEach((id, i) => { const x = card(id); x.rank = i + 1; x.status = st; });
+  focusCard(c.id);
+  render();
+  await api("POST", "/api/order", { status: st, ids }).catch(() => load());
+}
+document.addEventListener("pointerup", endSort);
+document.addEventListener("pointercancel", endSort);
+
 // ---------- swipe (phone) ----------
 // Like Mail: a short swipe opens the buttons, a long one does the action.
 // Swipe left for Start and Done, right for Cancel. Every swipe can be undone.
@@ -689,7 +810,7 @@ function closeSwipe() {
 
 document.addEventListener("touchstart", (e) => {
   const el = e.target.closest(".swipe");
-  if (!el || e.target.closest("[data-sw]")) return;
+  if (!el || e.target.closest("[data-sw]") || e.target.closest(".grip")) return;
   if (openSwipe && openSwipe !== el) closeSwipe();
   const t = e.touches[0];
   // An open row starts from where it sits, so a second swipe carries on from there.

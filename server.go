@@ -197,6 +197,22 @@ func serve(dir, host, port string) error {
 		h.bump()
 		ok(w, c)
 	})
+	mux.HandleFunc("POST /api/order", func(w http.ResponseWriter, r *http.Request) {
+		var o struct {
+			Status string   `json:"status"`
+			IDs    []string `json:"ids"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&o); err != nil {
+			fail(w, err)
+			return
+		}
+		if err := Reorder(dir, o.Status, o.IDs, who(r)); err != nil {
+			fail(w, err)
+			return
+		}
+		h.bump()
+		ok(w, map[string]bool{"ok": true})
+	})
 	mux.HandleFunc("POST /api/views", func(w http.ResponseWriter, r *http.Request) {
 		var v View
 		if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
