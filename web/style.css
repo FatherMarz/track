@@ -304,6 +304,6 @@ body.sorting .row:hover { background: none; }
 #ctx[hidden] { display: none; }
 #ctx .ctx-head { font-size: 11px; color: var(--faint); padding: 5px 9px 4px; }
 #ctx button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 7px 9px; background: none; border: 0; border-radius: 6px; color: var(--muted); text-align: left; }
-#ctx button:hover { background: var(--card-hover); color: var(--text); }
+#ctx button:hover { background: rgba(94, 106, 210, .22); color: var(--text); }
 #ctx button.on { color: var(--text); }
 #ctx button.on::after { content: "✓"; margin-left: auto; color: var(--accent); }
