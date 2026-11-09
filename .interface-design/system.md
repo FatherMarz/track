@@ -46,3 +46,6 @@ Journey makes completed work visible over months and preserves what each accompl
 
 - My day has a bottom-anchored Scratchpad: quiet label, saved state, Clear, and a 12px textarea (16px on touch devices).
 - The scratchpad retains its DOM, selection, and scroll position through board updates. It saves outside task and Journey history and lasts until cleared.
+
+- The native Track.app owns the Track Dock icon. Dock activation restores the My day companion and enables always-on-top, including after closing or minimizing it.
+- Desktop browser views show Open pinned note; the native view shows the real Pin/Pinned toggle. Hide the desktop launcher on touch devices.

@@ -15,7 +15,7 @@ final class StickyApp: NSObject, NSApplicationDelegate, WKScriptMessageHandler, 
     var pinned = UserDefaults.standard.object(forKey: "pinned") as? Bool ?? true
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+        NSApp.setActivationPolicy(.regular)
         installEditingMenu()
         let content = WKUserContentController()
         content.add(self, name: "trackSticky")
@@ -50,19 +50,19 @@ final class StickyApp: NSObject, NSApplicationDelegate, WKScriptMessageHandler, 
         let full = NSMenuItem(title: "Open full Track", action: #selector(openTrack), keyEquivalent: "")
         full.target = self; menu.addItem(full)
         menu.addItem(.separator())
-        let quit = NSMenuItem(title: "Quit Track Sticky", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let quit = NSMenuItem(title: "Quit Track", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         menu.addItem(quit); status.menu = menu
         updatePin()
         web.load(URLRequest(url: URL(string: "http://127.0.0.1:4747/?sticky=1#/mine")!))
-        showWindow()
+        showPinnedNote()
     }
 
     private func installEditingMenu() {
         // WKWebView uses the macOS responder chain for Command shortcuts.
         let main = NSMenu()
         let appItem = NSMenuItem(); main.addItem(appItem)
-        let appMenu = NSMenu(title: "Track Sticky")
-        appMenu.addItem(withTitle: "Quit Track Sticky", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let appMenu = NSMenu(title: "Track")
+        appMenu.addItem(withTitle: "Quit Track", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appItem.submenu = appMenu
         let editItem = NSMenuItem(); main.addItem(editItem)
         let edit = NSMenu(title: "Edit")
@@ -79,7 +79,28 @@ final class StickyApp: NSObject, NSApplicationDelegate, WKScriptMessageHandler, 
 
     @objc func showWindow() {
         NSApp.activate(ignoringOtherApps: true)
+        if panel.isMiniaturized { panel.deminiaturize(nil) }
         panel.makeKeyAndOrderFront(nil)
+    }
+
+    private func showPinnedNote() {
+        pinned = true
+        UserDefaults.standard.set(true, forKey: "pinned")
+        updatePin()
+        showWindow()
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showPinnedNote()
+        return false
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        if urls.contains(where: { $0.scheme == "track-sticky" && $0.host == "open" }) {
+            if panel != nil { showPinnedNote() }
+        }
     }
 
     @objc func openTrack() { NSWorkspace.shared.open(URL(string: "http://127.0.0.1:4747/?full=1#/")!) }
@@ -124,7 +145,9 @@ final class StickyApp: NSObject, NSApplicationDelegate, WKScriptMessageHandler, 
                 }
                 let info: [String: Any] = ["myDay": true, "compact": true, "floating": self.panel.level == .floating,
                     "allSpaces": self.panel.collectionBehavior.contains(.canJoinAllSpaces), "width": self.panel.frame.width]
-                if CommandLine.arguments.contains("--verify-shortcuts") {
+                if CommandLine.arguments.contains("--verify-dock") {
+                    self.verifyDockReopen(info)
+                } else if CommandLine.arguments.contains("--verify-shortcuts") {
                     Task { @MainActor in
                         do {
                             let checks = try await self.verifyEditingShortcuts()
@@ -135,6 +158,43 @@ final class StickyApp: NSObject, NSApplicationDelegate, WKScriptMessageHandler, 
                     }
                 } else { self.finishVerification(info) }
             }
+        }
+    }
+
+    private func verifyDockReopen(_ info: [String: Any]) {
+        panel.close()
+        pinned = false
+        updatePin()
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+            if let error = error { fputs("Dock reopen: \(error)\n", stderr); exit(1) }
+            self.checkDockReopen(info, attempt: 0)
+        }
+    }
+
+    private func checkDockReopen(_ info: [String: Any], attempt: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            if self.panel.isVisible && !self.panel.isMiniaturized && self.pinned && self.panel.level == .floating {
+                if info["closedWindowRestored"] as? Bool != true {
+                    var next = info; next["closedWindowRestored"] = true
+                    self.panel.miniaturize(nil)
+                    self.pinned = false; self.updatePin()
+                    NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+                        if let error = error { fputs("Dock unminimize: \(error)\n", stderr); exit(1) }
+                        self.checkDockReopen(next, attempt: 0)
+                    }
+                    return
+                }
+                self.web.evaluateJavaScript("document.querySelector('[data-personal=pin]')?.getAttribute('aria-pressed') === 'true'") { value, _ in
+                    guard value as? Bool == true else { fputs("Pin control did not reflect pinned state.\n", stderr); exit(1) }
+                    var result = info
+                    result["dockReopen"] = true
+                    result["minimizedWindowRestored"] = true
+                    result["pinControl"] = true
+                    result["regularDockApp"] = NSApp.activationPolicy() == .regular
+                    self.finishVerification(result)
+                }
+            } else if attempt < 30 { self.checkDockReopen(info, attempt: attempt + 1) }
+            else { fputs("Dock reopen did not restore the pinned note.\n", stderr); exit(1) }
         }
     }
 

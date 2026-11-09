@@ -148,18 +148,20 @@ Keep the data repo private if it contains personal information. The app source c
 
 ### Floating note on macOS
 
-The optional native companion shows My day in a small window. It stays above other windows by default.
+The native Track app opens My day in a small pinned window. Its Dock icon launches this companion.
+Clicking the Dock icon again restores the pinned note after closing or minimizing its window.
 The menu-bar checklist icon can show the window, toggle "Always on top", or quit the companion.
-The companion remembers its window position and pin preference. Track must run on port 4747.
+The companion remembers its window position. Launching or reopening it from the Dock enables pinning. Track must run on port 4747.
 The standard Edit menu supports Command-A, C, X, V, Z, and Shift-Command-Z in text fields.
 
 ```sh
-sh desktop/build.sh "$HOME/Applications/Track Sticky.app"
-open "$HOME/Applications/Track Sticky.app"
+sh desktop/build.sh "$HOME/Applications/Track.app"
+open "$HOME/Applications/Track.app"
 ```
 
 The "Open sticky note" button also opens a compact browser window.
 The native companion supplies the always-on-top behavior.
+In a desktop browser, **Open pinned note** launches the native companion through `track-sticky://open`.
 Use `http://127.0.0.1:4747/?full=1#/` to bookmark the complete board directly.
 
 ### Track on your phone

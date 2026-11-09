@@ -3,12 +3,18 @@
 <plist version="1.0"><dict>
   <key>CFBundleExecutable</key><string>TrackSticky</string>
   <key>CFBundleIdentifier</key><string>com.fathermarz.track-sticky</string>
-  <key>CFBundleName</key><string>Track Sticky</string>
-  <key>CFBundleDisplayName</key><string>Track Sticky</string>
+  <key>CFBundleName</key><string>Track</string>
+  <key>CFBundleDisplayName</key><string>Track</string>
+  <key>CFBundleIconFile</key><string>Track</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>1.0</string>
   <key>LSMinimumSystemVersion</key><string>13.0</string>
-  <key>LSUIElement</key><true/>
+  <key>LSUIElement</key><false/>
+  <key>CFBundleURLTypes</key><array><dict>
+    <key>CFBundleURLName</key><string>com.fathermarz.track-sticky</string>
+    <key>CFBundleURLSchemes</key><array><string>track-sticky</string></array>
+    <key>CFBundleTypeRole</key><string>Viewer</string>
+  </dict></array>
   <key>NSHighResolutionCapable</key><true/>
   <key>NSAppTransportSecurity</key><dict><key>NSAllowsLocalNetworking</key><true/></dict>
 </dict></plist>

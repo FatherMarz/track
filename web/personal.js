@@ -7,6 +7,8 @@ if (!personalParams.has("full") && !personalParams.has("sticky") && ["", "#", "#
   history.replaceState(null, "", location.pathname + (touchApp ? "?full=1#/mine" : "?sticky=1#/mine"));
 }
 const STICKY = new URLSearchParams(location.search).has("sticky");
+const PERSONAL_NATIVE = !!window.webkit?.messageHandlers?.trackSticky;
+const PERSONAL_TOUCH = !PERSONAL_NATIVE && (matchMedia("(pointer: coarse)").matches || navigator.maxTouchPoints>0);
 let personalAdding = false;
 const personalCompleting = new Set();
 const personalFinished = c => !OPEN(c) || personalCompleting.has(c.uid);
@@ -37,7 +39,7 @@ function renderPersonal() {
   const unfinished=others.filter(c=>carriedIDs.has(c.uid));
   const date=new Date().toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric"});
   const row=c=>{const finished=personalFinished(c);return `<div class="personal-task ${finished?"is-done":""}"><button class="personal-check" data-personal="complete" data-card="${esc(c.id)}" ${finished?"disabled":""} aria-label="${finished?"Completed: ":"Complete and record: "}${esc(c.title)}">${finished?"✓":""}</button><div class="personal-task-body"><button class="personal-task-title" data-personal="open" data-card="${esc(c.id)}" title="${esc(c.title)}">${esc(c.title)}</button></div>${!finished?`<button class="personal-remove" data-personal="remove" data-card="${esc(c.id)}" aria-label="Move ${esc(c.title)} out of today">×</button>`:""}</div>`;};
-  sc.innerHTML=`<section class="personal-page"><header class="personal-heading"><div><span class="journey-eyebrow">JUST YOUR THINGS</span><h2>My day<span class="personal-dot">.</span></h2><p>${esc(date)}</p></div><div class="personal-window-actions">${window.webkit?.messageHandlers?.trackSticky?`<button class="btn" data-personal="pin" aria-label="Toggle always on top" aria-pressed="${window.trackStickyPinned!==false}">${window.trackStickyPinned===false?"Pin":"Pinned"} ↟</button>`:""}${STICKY?`<button class="journey-text-button" data-personal="full-journey">Journey ↗</button>`:`<button class="journey-text-button" data-go="#/journey">Journey ↗</button>`}</div></header>
+  sc.innerHTML=`<section class="personal-page"><header class="personal-heading"><div><span class="journey-eyebrow">JUST YOUR THINGS</span><h2>My day<span class="personal-dot">.</span></h2><p>${esc(date)}</p></div><div class="personal-window-actions">${PERSONAL_NATIVE?`<button class="btn" data-personal="pin" aria-label="Toggle always on top" aria-pressed="${window.trackStickyPinned!==false}">${window.trackStickyPinned===false?"Pin":"Pinned"} ↟</button>`:!PERSONAL_TOUCH?`<button class="btn" data-personal="pin">Open pinned note ↟</button>`:""}${STICKY?`<button class="journey-text-button" data-personal="full-journey">Journey ↗</button>`:`<button class="journey-text-button" data-go="#/journey">Journey ↗</button>`}</div></header>
     <form class="personal-quick-add" id="personal-add-form"><label class="sr-only" for="personal-new-task">Add a task for yourself today</label><input id="personal-new-task" name="title" required maxlength="240" autocomplete="off" placeholder="What do you need to do?" ${personalAdding?"disabled":""}><button type="submit" class="personal-add" aria-label="Add task to My day" ${personalAdding?"disabled":""}>+</button></form>
     <div class="personal-progress"><span>${open.length?`${open.length} thing${open.length===1?"":"s"} for you today`:done.length?"Today’s list is done.":"Make a little room for your day."}</span><div class="personal-progress-actions"><span>${done.length?`${done.length} finished`:""}</span><button class="personal-milestone" data-personal="milestone">+ Milestone</button></div></div>
     <div class="personal-tasks">${open.map(row).join("")||`<div class="personal-empty">${done.length?"You made those things happen.":"Add a task above, or pick one from your list below."}</div>`}</div>
@@ -78,7 +80,11 @@ document.addEventListener("click",async e=>{
   if(a==="full")return window.open(location.pathname+"?full=1#/","_blank");
   if(a==="full-journey")return window.open(location.pathname+"?full=1#/journey","_blank");
   if(a==="milestone")return recordMilestone();
-  if(a==="pin")return window.webkit?.messageHandlers?.trackSticky?.postMessage({action:"togglePin"});
+  if(a==="pin"){
+    if(PERSONAL_NATIVE)return window.webkit.messageHandlers.trackSticky.postMessage({action:"togglePin"});
+    location.href="track-sticky://open";
+    return;
+  }
   if(a==="open"){
     if(STICKY){return window.open(location.pathname+"?full=1#/p/"+encodeURIComponent(c.project)+"?c="+encodeURIComponent(c.id),"_blank");}
     return openCard(c.id);
