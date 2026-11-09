@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"os"
@@ -38,6 +39,7 @@ type View struct {
 }
 
 type Card struct {
+	UID      string   `json:"uid"`
 	ID       string   `json:"id"`
 	Title    string   `json:"title"`
 	Status   string   `json:"status"`
@@ -223,6 +225,20 @@ func readCard(path string) (*Card, error) {
 			c.Activity = append(c.Activity, s)
 		}
 	}
+	c.UID = str(doc, "uid")
+	if c.UID == "" {
+		// Earlier cards keep the same identity after a project move changes their ID.
+		original := c.ID
+		for _, a := range c.Activity {
+			if _, tail, ok := strings.Cut(a, ": moved from "); ok {
+				if fields := strings.Fields(tail); len(fields) > 0 {
+					original = fields[0]
+					break
+				}
+			}
+		}
+		c.UID = fmt.Sprintf("%x", sha256.Sum256([]byte(original+"|"+c.Created)))
+	}
 	return c, nil
 }
 
@@ -230,6 +246,9 @@ func (c *Card) render() string {
 	var s strings.Builder
 	s.WriteString("---\n")
 	fmt.Fprintf(&s, "id: %s\n", c.ID)
+	if c.UID != "" {
+		fmt.Fprintf(&s, "uid: %s\n", c.UID)
+	}
 	fmt.Fprintf(&s, "title: %s\n", quoteMini(c.Title))
 	fmt.Fprintf(&s, "status: %s\n", c.Status)
 	fmt.Fprintf(&s, "priority: %s\n", c.Priority)
@@ -375,7 +394,7 @@ func Create(dir, projectKey, title string, p Patch, actor string) (*Card, error)
 			return errors.New("a card needs a title")
 		}
 		t := now()
-		c := &Card{ID: b.nextID(proj), Title: title, Status: "todo", Priority: "none", Labels: []string{},
+		c := &Card{UID: newJourneyID(), ID: b.nextID(proj), Title: title, Status: "todo", Priority: "none", Labels: []string{},
 			Created: t, Updated: t, Project: proj.Key, Activity: []string{t + " " + actor + ": created"}}
 		p.Title = nil
 		if _, err := applyPatch(b, c, p, actor, t); err != nil {

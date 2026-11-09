@@ -1,0 +1,86 @@
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+.personal-page { max-width:560px; margin:0 auto; padding:24px 24px 64px; }
+.personal-heading { display:flex; justify-content:space-between; gap:12px; align-items:start; margin-bottom:16px; }
+.personal-heading .journey-eyebrow { display:none; }
+.personal-heading h2 { font-size:24px; font-weight:600; letter-spacing:-.04em; line-height:1.15; margin:0 0 4px; }
+.personal-dot { color:var(--focus); }
+.personal-heading p { font-size:11px; color:var(--muted); margin:0; }
+.personal-window-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:end; }
+.personal-window-actions .btn { font-size:11px; padding:4px 7px; }
+.personal-window-actions .journey-text-button { font-size:11px; padding:4px 0; }
+.personal-quick-add { display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:12px; }
+.personal-quick-add input { background:none; border:0; padding:6px 0; outline-offset:3px; min-width:0; flex:1; color:var(--text); font-size:12px; }
+.personal-quick-add input::placeholder { color:var(--muted); }
+.personal-add { width:26px; height:26px; border:0; background:var(--journey-soft); color:var(--focus); font-size:18px; border-radius:4px; flex:none; }
+.personal-progress { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--muted); font-size:11px; margin-bottom:8px; flex-wrap:wrap; }
+.personal-progress > span:last-child { color:var(--focus); }
+.personal-task { display:flex; align-items:start; gap:8px; padding:5px 0; }
+.personal-check { margin-top:1px; width:18px; height:18px; border:1px solid var(--faint); border-radius:50%; background:none; flex:none; color:var(--focus); padding:0; font-size:11px; }
+.personal-check:hover { background:var(--journey-soft); border-color:var(--focus); }
+.personal-task-body { flex:1; min-width:0; }
+.personal-task-title { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; width:100%; text-align:left; border:0; background:none; padding:1px 0; font-size:12px; line-height:1.4; color:var(--text); overflow-wrap:anywhere; }
+.personal-task-title:hover { color:var(--focus); }
+.personal-task-meta { display:none; }
+.personal-remove { background:none; border:0; color:var(--faint); font-size:14px; padding:0 3px; min-height:20px; flex:none; opacity:0; }
+.personal-task:hover .personal-remove,.personal-remove:focus-visible { opacity:1; }
+.personal-remove:hover { color:var(--text); }
+.personal-task.is-done .personal-task-title { color:var(--muted); text-decoration:line-through; }
+.personal-task.is-done .personal-check { border-color:var(--accent); }
+.personal-done,.personal-backlog { margin-top:12px; }
+.personal-page summary { padding:5px 0; color:var(--muted); font-size:11px; cursor:pointer; }
+.personal-empty { padding:12px 0 4px; color:var(--muted); font-size:12px; line-height:1.5; }
+.personal-footer { display:flex; flex-direction:column; align-items:start; gap:4px; color:var(--faint); font-size:10px; line-height:1.5; margin-top:16px; }
+.personal-footer .journey-text-button { font-size:11px; padding:4px 0; }
+.personal-other,.personal-carry > div { display:flex; gap:12px; align-items:center; justify-content:space-between; padding:5px 0; font-size:12px; }
+.personal-other > span,.personal-carry > div > span { min-width:0; overflow-wrap:anywhere; }
+.personal-other > button,.personal-carry button { flex:none; font-size:11px; padding:3px 0; }
+.personal-carry { margin-top:12px; }
+.personal-carry > .journey-eyebrow { font-size:10px; }
+.sticky-mode #side,.sticky-mode #top,.sticky-mode #pills,.sticky-mode #fab { display:none !important; }
+.sticky-mode #app { display:block; }
+.sticky-mode #main { height:100dvh; }
+.sticky-mode .personal-page { padding:16px 14px 24px; }
+.sticky-mode .personal-heading h2 { font-size:22px; }
+.sticky-mode #toast { white-space:normal; width:calc(100% - 24px); bottom:8px; font-size:11px; }
+.sticky-mode #panel { display:none; }
+@media(max-width:760px) { .personal-page { padding:20px 16px 80px; } }
+@media(pointer:coarse) {
+  .personal-quick-add input { font-size:16px; min-height:44px; }
+  .personal-add,.personal-remove { min-width:44px; min-height:44px; }
+  .personal-remove { opacity:1; }
+  .personal-task { gap:4px; padding:2px 0; }
+  .personal-check { width:44px; height:44px; border:0; margin-top:0; position:relative; }
+  .personal-check::before { content:""; position:absolute; inset:13px; border:1px solid var(--muted); border-radius:50%; }
+  .personal-check:hover { background:none; }
+  .personal-check:hover::before { border-color:var(--focus); }
+  .personal-task.is-done .personal-check::before { border-color:var(--accent); }
+  .personal-task-title { font-size:13px; padding-top:12px; }
+  .personal-page .journey-text-button,.personal-page summary { min-height:44px; }
+}
+.personal-progress-actions { display:flex; align-items:center; gap:10px; }
+.personal-milestone { background:none; border:0; padding:3px 0; font-size:11px; color:var(--focus); }
+.personal-milestone:hover { color:var(--text); }
+.personal-milestones { margin-top:12px; }
+.personal-milestone-memory { display:flex; flex-direction:column; gap:3px; padding:5px 0; font-size:12px; }
+.personal-milestone-memory > span { overflow-wrap:anywhere; }
+.personal-milestone-memory time { font-size:10px; color:var(--muted); }
+.personal-confetti { position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:100; }
+.personal-confetti > span { position:absolute; width:5px; height:8px; border-radius:1px; will-change:transform,opacity; }
+@media(pointer:coarse) { .personal-milestone { min-height:44px; padding:8px 0; } }
+/* A disposable notepad, anchored in the spare space beneath today's list. */
+.personal-page { display:flex; flex-direction:column; min-height:100%; }
+.personal-page > * { flex-shrink:0; }
+.personal-scratchpad { margin-top:auto; padding-top:24px; }
+.scratchpad-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:8px; }
+.scratchpad-heading label { font-size:12px; font-weight:500; color:var(--muted); }
+.scratchpad-heading > div { display:flex; align-items:center; gap:12px; }
+.scratchpad-status { font-size:10px; color:var(--faint); }
+.scratchpad-status.scratchpad-error { color:var(--journey-trophy); }
+.scratchpad-clear { border:0; background:none; padding:4px 0; font-size:11px; color:var(--muted); }
+.scratchpad-clear:hover { color:var(--text); }
+.scratchpad-clear:disabled { color:var(--faint); cursor:default; }
+.personal-scratchpad textarea { display:block; width:100%; height:clamp(144px,24vh,240px); min-height:120px; resize:vertical; padding:10px 12px; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:6px; font:inherit; font-size:12px; line-height:1.6; }
+.personal-scratchpad textarea::placeholder { color:var(--faint); }
+.personal-scratchpad textarea:focus-visible,.scratchpad-clear:focus-visible { outline:1px solid var(--focus); outline-offset:2px; }
+@media(pointer:coarse) { .personal-scratchpad textarea { font-size:16px; } .scratchpad-clear { min-height:44px; } }
+body:has(#personal-scratchpad:focus) #fab { display:none; }

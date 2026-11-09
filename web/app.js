@@ -137,6 +137,8 @@ function parseRoute() {
   const h = decodeURIComponent(path);
   const open = query ? decodeURIComponent(query) : null;
   if (h === "inbox") return { kind: "inbox", open };
+  if (h === "journey") return { kind: "journey", open };
+  if (h === "mine") return { kind: "mine", open };
   if (h.startsWith("p/")) return { kind: "project", key: h.slice(2), open };
   if (h.startsWith("v/")) return { kind: "view", key: h.slice(2), open };
   return { kind: "home", open };
@@ -263,6 +265,8 @@ function renderNav() {
   const item = (hash, label, count, active, dot) =>
     `<button class="nav-item ${active ? "active" : ""}" data-go="${hash}">${dot || ""}<span>${esc(label)}</span>${count ? `<span class="count">${count}</span>` : ""}</button>`;
   let h = item("#/", "Home", homeCards(cards).length, r.kind === "home", "");
+  h += item("#/mine", "My day", personalToday().filter(c=>OPEN(c)).length, r.kind === "mine", "◦");
+  h += item("#/journey", "Journey", 0, r.kind === "journey", "✦");
   h += item("#/inbox", "Inbox", cards.filter((c) => c.project === "inbox" && OPEN(c)).length, r.kind === "inbox");
   h += `<div class="nav-head">Projects</div>`;
   for (const p of S.data.projects.filter((p) => p.key !== "inbox")) {
@@ -284,6 +288,8 @@ function renderPills() {
     `<button class="pill ${on ? "on" : ""}" data-go="${hash}">${color ? `<span class="dot" style="background:${esc(color)}"></span>` : ""}${esc(label)}${n ? `<span class="n">${n}</span>` : ""}</button>`;
   let h = `<button class="pill icon" id="search" aria-label="Search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>`;
   h += pill("#/", "Home", 0, r.kind === "home");
+  h += pill("#/mine", "My day", 0, r.kind === "mine");
+  h += pill("#/journey", "Journey", 0, r.kind === "journey");
   const inbox = cards.filter((c) => c.project === "inbox" && OPEN(c)).length;
   if (inbox || r.kind === "inbox") h += pill("#/inbox", "Inbox", inbox, r.kind === "inbox");
   for (const p of S.data.projects.filter((p) => p.key !== "inbox")) {
@@ -302,6 +308,8 @@ function renderPills() {
 function pageName() {
   const r = S.route;
   if (r.kind === "inbox") return "Inbox";
+  if (r.kind === "journey") return "Journey";
+  if (r.kind === "mine") return "My day";
   if (r.kind === "project") return project(r.key)?.name || "Project";
   if (r.kind === "view") return r.key;
   return "Home";
@@ -309,6 +317,7 @@ function pageName() {
 
 function renderMain() {
   const r = S.route;
+  $("#fab").setAttribute("aria-label",r.kind === "journey" ? "Record milestone" : "New card");
   const name = pageName();
   document.title = `Track | ${name}`;
   const p = r.kind === "project" ? project(r.key) : null;
@@ -320,6 +329,17 @@ function renderMain() {
   const br = S.data.broken;
   $("#broken").hidden = !br.length;
   $("#broken").innerHTML = br.map((b) => `Cannot read ${esc(b.path)}: ${esc(b.error)}`).join("<br>");
+
+  if (r.kind === "journey") {
+    $("#top-actions").innerHTML = `<button class="btn" data-journey="chapter-new">Add chapter</button><button class="btn primary" data-journey="milestone-record">Record milestone</button>`;
+    renderJourney();
+    return;
+  }
+  if (r.kind === "mine") {
+    $("#top-actions").innerHTML = `<button class="btn" data-personal="sticky">Open sticky note ↗</button>`;
+    renderPersonal();
+    return;
+  }
 
   const keep = { top: $("#content").scrollTop, left: $("#content").scrollLeft };
   const cols = layout();
@@ -401,6 +421,7 @@ function renderMain() {
     $("#content").innerHTML = head + body;
   }
   const sc = $("#content");
+  if (r.kind === "home") sc.insertAdjacentHTML("afterbegin", renderDailyRun());
   if (S.pageChanged) { sc.scrollTop = 0; sc.scrollLeft = 0; animate(sc, "page-in"); }
   else { sc.scrollTop = keep.top; sc.scrollLeft = keep.left; }
   // Follow the selection only when the keyboard moved it. A tap or a swipe keeps your place.
@@ -469,6 +490,7 @@ function renderPanel() {
       <label>Parent</label><input data-f="parent" value="${esc(c.parent)}" placeholder="WEB-10">
     </div>
     <textarea class="p-body" data-f="body" placeholder="Add a description">${esc(c.body)}</textarea>
+    ${renderCardJourney(c)}
     <div class="p-sec">Activity</div>
     ${acts}
     <input class="p-note" data-note placeholder="Add a note and press Enter">
@@ -526,6 +548,7 @@ document.addEventListener("click", (e) => {
   const sw = t.closest("[data-sw]");
   if (sw) return swipeAct(sw.closest(".swipe").dataset.id, sw.dataset.sw);
   if (openSwipe) { closeSwipe(); if (t.closest(".swipe")) return; }
+  if (t.closest("#fab") && S.route.kind === "journey") return recordMilestone();
   if (t.closest("#new-card") || t.closest("#fab")) return PHONE.matches ? openSheet() : newCardPrompt();
   if (t.closest("#search")) return openPalette();
   if (t.closest("#view-switch")) {
@@ -628,6 +651,7 @@ document.addEventListener("keydown", (e) => {
     return $("#palette").hidden ? openPalette() : closePalette();
   }
   if (!$("#palette").hidden) return paletteKey(e);
+  if (["journey", "mine"].includes(S.route.kind) && !S.open) return;
 
   const tag = document.activeElement && document.activeElement.tagName;
   const typing = /INPUT|TEXTAREA|SELECT/.test(tag);

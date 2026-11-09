@@ -8,9 +8,11 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Track">
 <link rel="icon" href="icon.svg">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="journey.css">
+<link rel="stylesheet" href="personal.css">
 <title>Track | Home</title>
 </head>
 <body>
@@ -52,6 +54,10 @@
 </div>
 <div id="ctx" hidden></div>
 <div id="toast" hidden></div>
+<dialog id="journey-dialog" aria-labelledby="journey-dialog-title"></dialog>
+<script src="journey.js"></script>
+<script src="scratchpad.js"></script>
+<script src="personal.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -1,0 +1,182 @@
+/* Journey shares Track's graphite surfaces and violet accent. Outcomes lead;
+   controls and metadata stay quiet. Milestones use a warm brass highlight. */
+:root { --journey-trophy: #dfbc79; --journey-soft: rgba(124,134,230,.10); }
+.journey-page { max-width: 1120px; margin: 0 auto; padding: 36px 40px 80px; }
+.journey-eyebrow { display: block; font-size: 11px; font-weight: 500; letter-spacing: .08em; color: var(--muted); line-height: 1.5; }
+.journey-muted { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.journey-hero h2 { font-size: 32px; font-weight: 600; letter-spacing: -.04em; margin: 10px 0 28px; line-height: 1.15; text-wrap: balance; }
+.journey-hero-stats { display: flex; gap: 48px; align-items: center; flex-wrap: wrap; }
+.journey-hero-stats > div { display: flex; flex-direction: column; gap: 4px; }
+.journey-hero-stats strong { font-size: 48px; font-weight: 600; letter-spacing: -.04em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.journey-hero-stats > div > span:not(.journey-eyebrow):not(.journey-xp) { color: var(--muted); }
+.journey-hero-stats .journey-level { margin-left: auto; min-width: 208px; max-width: 280px; flex: 1; gap: 8px; }
+.journey-level .journey-eyebrow { color: var(--focus); }
+.journey-xp { font-size: 24px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.journey-hero > p { margin: 24px 0 0; }
+.journey-meter { height: 5px; border-radius: 8px; background: var(--line); overflow: hidden; }
+.journey-meter > span { display: block; height: 100%; background: var(--focus); border-radius: inherit; }
+.journey-tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--line); margin: 28px 0; }
+.journey-tabs button { border: 0; border-bottom: 2px solid transparent; background: none; color: var(--muted); padding: 12px 0; font-weight: 500; white-space: nowrap; }
+.journey-tabs button.active { color: var(--text); border-bottom-color: var(--focus); }
+.journey-filters { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin-bottom: 28px; }
+.journey-filters label,.journey-form label { display: flex; flex-direction: column; gap: 8px; color: var(--muted); font-size: 12px; }
+.journey-filters select,.journey-filters input,.journey-form input:not([type=checkbox]),.journey-form select,.journey-form textarea { background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 6px; padding: 9px 10px; min-height: 38px; max-width: 100%; }
+.journey-filters .journey-search { flex: 1; min-width: 180px; }
+.journey-section-head { display: flex; gap: 16px; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+.journey-section-head h2 { font-size: 20px; letter-spacing: -.025em; font-weight: 600; margin: 6px 0 0; line-height: 1.25; }
+.journey-section-head h3 { font-size: 16px; font-weight: 500; letter-spacing: -.01em; margin: 4px 0 0; }
+.journey-trail { padding-bottom: 28px; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
+.journey-months { display: grid; grid-template-columns: repeat(var(--months),minmax(0,1fr)); gap: 8px; align-items: end; }
+.journey-month { display: flex; flex-direction: column; gap: 8px; align-items: stretch; background: none; border: 0; border-radius: 4px; color: var(--muted); padding: 8px 4px; min-width: 0; }
+.journey-month:hover,.journey-month.selected { background: var(--journey-soft); color: var(--text); }
+.month-count { font-size: 12px; font-variant-numeric: tabular-nums; }
+.month-bar-space { display: flex; align-items: end; height: 104px; }
+.month-bar { display: block; width: 100%; background: var(--accent); border-radius: 3px 3px 0 0; }
+.journey-month.selected .month-bar { background: var(--focus); }
+.month-label { font-size: 11px; overflow-wrap: anywhere; }
+.journey-milestones { margin-bottom: 36px; }
+.journey-milestone { display: flex; gap: 16px; padding: 24px 0; border-bottom: 1px solid var(--line); }
+.milestone-symbol { font-size: 28px; line-height: 1.1; color: var(--journey-trophy); width: 28px; flex: none; }
+.milestone-body { min-width: 0; flex: 1; }
+.milestone-body h4 { font-size: 18px; font-weight: 500; letter-spacing: -.015em; line-height: 1.35; margin: 8px 0; overflow-wrap: anywhere; }
+.milestone-body p,.milestone-body blockquote { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 8px 0 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.milestone-body blockquote { border-left: 2px solid var(--journey-trophy); padding-left: 16px; color: var(--text); }
+.milestone-body .journey-meter { margin: 16px 0 8px; }
+.milestone-body .journey-meter > span { background: var(--journey-trophy); }
+.milestone-body .journey-actions { margin-top: 16px; }
+.milestone-links { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; align-items: start; }
+.milestone-links button { text-align: left; overflow-wrap: anywhere; }
+.journey-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.journey-actions .btn { min-height: 36px; }
+.journey-text-button { background: none; border: 0; color: var(--muted); padding: 6px 0; font-size: 12px; }
+.journey-text-button:hover { color: var(--text); }
+.journey-complete { color: var(--focus); font-size: 12px; }
+.journey-empty { padding: 28px 0 36px; }
+.journey-empty h4 { font-size: 18px; font-weight: 500; margin: 0 0 8px; }
+.journey-empty p { color: var(--muted); line-height: 1.6; margin: 0 0 16px; }
+.journey-period-summary { color: var(--muted); font-size: 12px; margin: -8px 0 24px; }
+.journey-month-group { padding-left: 16px; border-left: 1px solid var(--line); margin-bottom: 32px; }
+.journey-month-group > h4 { font-weight: 500; font-size: 13px; margin: 0 0 8px; color: var(--muted); }
+.journey-victory { display: flex; align-items: start; gap: 12px; padding: 16px 0; }
+.victory-mark { color: var(--focus); flex: none; font-size: 16px; width: 20px; }
+.journey-victory.is-milestone .victory-mark,.journey-victory.is-milestone .journey-eyebrow { color: var(--journey-trophy); }
+.victory-body { flex: 1; min-width: 0; }
+.victory-body h4 { margin: 6px 0; font-weight: 500; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+.victory-body p { margin: 8px 0 12px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; color: var(--text); }
+.victory-body .journey-text-button { margin-top: 4px; }
+.daily-run { margin: 24px 22px 12px; padding: 24px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+.daily-run .journey-section-head { margin-bottom: 20px; }
+.run-status { display: flex; gap: 12px; justify-content: space-between; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; margin-bottom: 10px; flex-wrap: wrap; }
+.run-status > span:last-child { color: var(--focus); }
+.run-quest { display: flex; gap: 16px; align-items: center; justify-content: space-between; padding: 20px 0; border-bottom: 1px solid var(--line); }
+.run-quest > div:first-child { min-width: 0; }
+.run-quest-title { font-size: 14px; font-weight: 500; line-height: 1.5; margin: 4px 0; overflow-wrap: anywhere; }
+.run-quest.landed .run-quest-title { color: var(--muted); }
+.run-quest .journey-actions { justify-content: end; flex-shrink: 0; }
+.run-footer { display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-top: 16px; }
+.card-journey { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 16px 0; margin-top: 20px; display: flex; flex-direction: column; gap: 12px; }
+#journey-dialog { color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; width: min(560px,calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; box-shadow: 0 20px 64px rgba(0,0,0,.4); }
+#journey-dialog::backdrop { background: rgba(0,0,0,.65); }
+.journey-form { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+.journey-form header,.journey-form footer { display: flex; gap: 16px; justify-content: space-between; align-items: center; }
+.journey-form header h2 { font-size: 20px; font-weight: 500; margin: 0; letter-spacing: -.025em; }
+.journey-form header > button { font-size: 24px; width: 32px; }
+.journey-form footer { justify-content: end; padding-top: 4px; }
+.journey-form p { margin: 0; }
+.journey-form textarea { resize: vertical; line-height: 1.5; }
+.journey-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.journey-form-grid > label { min-width: 0; }
+.journey-form summary { color: var(--muted); cursor: pointer; padding: 4px 0 12px; font-size: 12px; }
+.journey-dialog-subject { font-size: 18px; line-height: 1.4; overflow-wrap: anywhere; }
+.milestone-task-picker { max-height: 220px; overflow-y: auto; margin-top: 12px; }
+.journey-form .milestone-task-picker label { flex-direction: row; align-items: start; gap: 10px; padding: 10px 0; color: var(--text); line-height: 1.5; }
+.journey-form .milestone-task-picker label[hidden] { display: none; }
+.milestone-task-picker input { margin: 3px 0 0; accent-color: var(--accent); flex: none; }
+.journey-form-error { color: #ffb4b4; font-size: 13px; line-height: 1.5; }
+.journey-form button[type=submit]:disabled,.journey-actions button:disabled { opacity: .45; cursor: not-allowed; }
+.journey-page button:focus-visible,.daily-run button:focus-visible,.card-journey button:focus-visible,.journey-form button:focus-visible,.journey-form input:focus-visible,.journey-form textarea:focus-visible,.journey-form select:focus-visible,.journey-filters input:focus-visible,.journey-filters select:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.journey-page,.daily-run { -webkit-font-smoothing: antialiased; }
+@media(max-width:1100px) {
+  .journey-page { padding: 28px 24px 64px; }
+  .journey-hero-stats { gap: 28px; }
+  .journey-hero-stats .journey-level { max-width: none; }
+}
+@media(max-width:760px) {
+  .journey-page { padding: 24px 16px 100px; }
+  .journey-hero h2 { font-size: 28px; }
+  .journey-hero-stats { gap: 28px; }
+  .journey-hero-stats strong { font-size: 40px; }
+  .journey-hero-stats .journey-level { flex-basis: 100%; margin-left: 0; }
+  .journey-tabs { gap: 24px; }
+  .journey-tabs button { min-height: 44px; }
+  .journey-filters label { flex: 1; min-width: 120px; }
+  .journey-filters .journey-search { flex-basis: 100%; }
+  .journey-filters select,.journey-filters input,.journey-form input:not([type=checkbox]),.journey-form select,.journey-form textarea { font-size: 16px; min-height: 44px; width: 100%; }
+  .daily-run { padding: 20px 16px; margin: 16px 12px 8px; }
+  .daily-run .journey-section-head > button { font-size: 12px; }
+  .run-quest { flex-wrap: wrap; }
+  .run-quest .journey-actions { justify-content: start; }
+  .journey-actions .btn,.journey-text-button,.run-footer .btn,.journey-section-head .btn { min-height: 44px; }
+  .journey-milestone { gap: 12px; }
+  .milestone-symbol { width: 20px; font-size: 24px; }
+  .journey-months { gap: 4px; }
+  .journey-month { padding: 8px 1px; }
+  .journey-months:has(> :nth-child(13)) { grid-template-columns: repeat(12,minmax(0,1fr)); }
+  .month-bar-space { height: 80px; }
+  .journey-form { padding: 20px; }
+  .journey-form-grid { grid-template-columns: 1fr; }
+}
+@media(prefers-reduced-motion: no-preference) {
+  .journey-meter > span { transition: transform 180ms cubic-bezier(.23,1,.32,1); }
+}
+/* A continuous story: a chapter, its milestones, then the next chapter. */
+.journey-linear { max-width:1080px; }
+.story-header { margin-bottom:24px; }
+.story-header > h2 { margin:8px 0 16px; font-size:30px; font-weight:600; letter-spacing:-.04em; line-height:1.2; }
+.story-totals { display:flex; gap:8px 24px; flex-wrap:wrap; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }
+.story-totals > span:last-child { color:var(--focus); }
+.story-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; }
+.story-actions .btn { min-height:36px; }
+.story-flow { display:flex; gap:12px; align-items:center; flex-wrap:wrap; color:var(--muted); font-size:12px; border-top:1px solid var(--line); padding-top:20px; margin-bottom:36px; }
+.story-flow > span[aria-hidden] { color:var(--faint); }
+.story-chapter { border-left:1px solid var(--line); padding:0 0 32px 24px; position:relative; }
+.story-chapter::before { content:""; position:absolute; width:7px; height:7px; border-radius:50%; background:var(--focus); left:-4px; top:6px; }
+.chapter-heading { display:flex; align-items:start; justify-content:space-between; gap:20px; margin-bottom:24px; }
+.chapter-heading > div { min-width:0; }
+.chapter-heading h3 { font-size:24px; font-weight:500; letter-spacing:-.03em; line-height:1.25; margin:8px 0; overflow-wrap:anywhere; }
+.chapter-heading p { font-size:13px; line-height:1.6; color:var(--muted); margin:8px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.chapter-heading > button { flex:none; }
+.story-chapter .journey-milestones { margin-bottom:0; }
+.story-chapter .journey-milestones > .journey-section-head { margin-bottom:8px; }
+.story-chapter .journey-milestones > .journey-section-head .journey-eyebrow { display:none; }
+.story-chapter .journey-milestone { padding:20px 0; }
+.story-chapter .journey-empty { padding:12px 0 16px; }
+.story-chapter .journey-empty > .btn { display:none; }
+.story-chapter .journey-empty h4 { font-size:14px; }
+.story-chapter .journey-empty p { font-size:12px; }
+.story-start { border-left:1px solid var(--line); padding:8px 0 24px 24px; }
+.story-start h3 { font-size:22px; letter-spacing:-.025em; font-weight:500; margin:10px 0; }
+.story-start p { color:var(--muted); font-size:13px; line-height:1.6; margin:0 0 16px; }
+.story-unfiled { margin:24px 0; }
+.story-next-chapter { margin:0 0 24px 24px; }
+.story-wins { border-top:1px solid var(--line); padding-top:32px; margin-top:20px; }
+.story-wins > .journey-section-head { margin-bottom:24px; }
+.milestone-chapter-picker { color:var(--muted); font-size:11px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.milestone-chapter-picker select { min-width:0; max-width:200px; background:var(--bg); color:var(--muted); border:1px solid var(--line); border-radius:4px; font-size:11px; padding:4px; }
+@media(max-width:760px) {
+  .story-header > h2 { font-size:26px; }
+  .story-flow { gap:8px; font-size:11px; margin-bottom:28px; }
+  .story-chapter { padding-left:16px; }
+  .chapter-heading { gap:12px; flex-wrap:wrap; }
+  .chapter-heading h3 { font-size:22px; }
+  .chapter-heading > button { min-height:36px; }
+  .story-chapter .journey-section-head { gap:12px; }
+  .story-chapter .journey-actions { gap:10px; }
+  .milestone-chapter-picker { width:100%; }
+  .milestone-chapter-picker select { max-width:100%; width:100%; font-size:16px; min-height:44px; }
+  .sticky-mode .journey-form { padding:16px; gap:12px; }
+  .sticky-mode .journey-form header h2 { font-size:18px; }
+  .sticky-mode .journey-form label { gap:5px; }
+  .sticky-mode .journey-form textarea { min-height:60px; }
+  .sticky-mode .journey-form footer { position:sticky; bottom:0; background:var(--panel); padding:8px 0 0; }
+}

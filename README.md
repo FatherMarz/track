@@ -100,6 +100,77 @@ To reach it from your phone, put it on your tailnet only. Do not use Funnel:
 tailscale serve --bg --https=8443 http://127.0.0.1:4747
 ```
 
+## My day and Journey
+
+**My day** is your personal list. It only shows cards assigned to `me`.
+Track opens in the compact My day view by default. "Open full Track" opens the complete board.
+Add a task in My day to assign it to yourself and choose it for today.
+Due and overdue personal tasks also appear here. Other personal tasks stay in the expandable list.
+Unfinished tasks from earlier days remain available under "Still on your mind".
+
+Click a task's circle to finish it and record a win. The list updates immediately.
+A successful save shows a short confetti burst. Failed saves restore the task. Each personal win earns 10 XP once.
+Reopening or moving a task does not create another reward.
+
+The note's **+ Milestone** button records an accomplishment directly.
+Choose its actual date, including a past date, and add an optional reflection.
+A chapter selector places it in the appropriate part of your story.
+
+The **Scratchpad** beneath My day saves loose notes automatically. It survives restarts and is shared with the phone view.
+Its text stays until you clear it. Clearing removes the current note without adding it to git history or Journey.
+Scratchpad state lives outside the board repo, under `~/.local/share/track/scratchpads/`.
+A local browser draft protects edits during an interruption. It is removed after the server saves the note.
+
+**Journey** follows one continuous order: chapters, their milestones, and the wins along the way.
+Create a chapter with a name, start date, and optional context. Chapters appear in date order.
+Each chapter offers **Record milestone** for accomplishments and **Plan a milestone** for future goals.
+You can move an existing milestone into a chapter without changing its accomplishment snapshot.
+
+Journey preserves completed work, accepted results, milestones, and reflections.
+The six-month view shows your progress by month. All wins supports project filters and text search.
+You can also view all recorded history.
+
+Choose up to three daily quests on Home. Small, meaningful, and big quests earn 10, 25, and 50 XP.
+Results in Done or In Review require your acceptance before they earn XP.
+Every 250 XP adds a level. Missed days do not remove progress.
+
+Create a milestone with a title, project, target date, and optional linked tasks.
+Record the linked task wins before you mark the milestone achieved.
+You can also create a standalone personal milestone.
+An achieved milestone saves its date and reflection, and earns 100 XP once.
+You can record an earlier achievement date. Active milestones support edits and archiving.
+
+Journey stores immutable accomplishment snapshots in `journey.json`, beside the cards in your data repo.
+Task renames, project moves, and deletions do not rewrite these snapshots.
+The first server start imports existing Done cards as earlier work, without retroactive XP.
+Activity records supply completion dates. If no completion date exists, Journey labels the last-update date as estimated.
+Keep the data repo private if it contains personal information. The app source contains none of this data.
+
+### Floating note on macOS
+
+The optional native companion shows My day in a small window. It stays above other windows by default.
+The menu-bar checklist icon can show the window, toggle "Always on top", or quit the companion.
+The companion remembers its window position and pin preference. Track must run on port 4747.
+The standard Edit menu supports Command-A, C, X, V, Z, and Shift-Command-Z in text fields.
+
+```sh
+sh desktop/build.sh "$HOME/Applications/Track Sticky.app"
+open "$HOME/Applications/Track Sticky.app"
+```
+
+The "Open sticky note" button also opens a compact browser window.
+The native companion supplies the always-on-top behavior.
+Use `http://127.0.0.1:4747/?full=1#/` to bookmark the complete board directly.
+
+### Track on your phone
+
+Open the private Tailscale HTTPS URL in Safari. Then choose Share, Add to Home Screen, and Open as Web App.
+The Home Screen app starts on My day with full navigation to projects and Journey.
+The app manifest uses `/?full=1#/mine` as its launch URL.
+Phone browsers also default to this full interface. The Mac companion keeps its compact note view.
+
+The Mac must run Track and remain reachable through Tailscale. The phone app uses the same board and history.
+
 ## Voice capture
 
 `POST /api/capture?format=text` takes spoken words as the body. It adds the card and returns one sentence, like "Added WEB-13 to Website: Fix the login timeout". An iOS Shortcut can dictate text, send it with "Get Contents of URL", and speak the reply.

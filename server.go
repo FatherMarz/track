@@ -49,6 +49,7 @@ func snapshot(dir string) uint64 {
 	}
 	add(filepath.Join(dir, "projects.yml"))
 	add(filepath.Join(dir, "views.yml"))
+	add(filepath.Join(dir, "journey.json"))
 	filepath.WalkDir(filepath.Join(dir, "cards"), func(p string, d fs.DirEntry, err error) error {
 		if err == nil && !d.IsDir() && strings.HasSuffix(p, ".md") {
 			add(p)
@@ -66,6 +67,13 @@ func serve(dir, host, port string) error {
 		port = "4747"
 	}
 	if _, err := loadBoard(dir); err != nil {
+		return err
+	}
+	if err := initJourney(dir); err != nil {
+		return err
+	}
+	scratchpad, err := newScratchpadStore(dir)
+	if err != nil {
 		return err
 	}
 	h := &hub{subs: map[chan int]bool{}}
@@ -99,6 +107,7 @@ func serve(dir, host, port string) error {
 	}()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/api/scratchpad", scratchpad.serveHTTP)
 	fail := func(w http.ResponseWriter, err error) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
@@ -125,8 +134,27 @@ func serve(dir, host, port string) error {
 		h.mu.Lock()
 		v := h.version
 		h.mu.Unlock()
-		ok(w, map[string]any{"projects": b.allProjects(), "views": b.Views, "cards": b.Cards, "broken": b.Broken,
+		j, _, err := readJourney(dir, b)
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		ok(w, map[string]any{"projects": b.allProjects(), "views": b.Views, "cards": b.Cards, "broken": b.Broken, "journey": j,
 			"statuses": Statuses, "priorities": Priorities, "version": v})
+	})
+	mux.HandleFunc("POST /api/journey", func(w http.ResponseWriter, r *http.Request) {
+		var in JourneyAction
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1<<20)).Decode(&in); err != nil {
+			fail(w, err)
+			return
+		}
+		j, err := journeyChange(dir, in, who(r))
+		if err != nil {
+			fail(w, err)
+			return
+		}
+		h.bump()
+		ok(w, j)
 	})
 	mux.HandleFunc("POST /api/cards", func(w http.ResponseWriter, r *http.Request) {
 		var in struct {
