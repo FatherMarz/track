@@ -203,6 +203,43 @@ func initJourney(dir string) error {
 	})
 }
 
+// Every finished task earns the same reward once. A milestone earns 100.
+const taskXP = 10
+
+// awardDone records the win for cards that just reached Done, whoever finished them
+// and from wherever (board, list, CLI, agent). Journey starts with the first server
+// run, so nothing is recorded before journey.json exists.
+func awardDone(dir string, b *Board, cards ...*Card) error {
+	if len(cards) == 0 {
+		return nil
+	}
+	if _, err := os.Stat(filepath.Join(dir, "journey.json")); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	j, _, err := readJourney(dir, b)
+	if err != nil {
+		return err
+	}
+	stamp := time.Now().Format(time.RFC3339)
+	added := false
+	for _, c := range cards {
+		if j.victory(c.UID) != nil {
+			continue
+		}
+		j.Victories = append(j.Victories, Victory{ID: "card:" + c.UID, Kind: "card", CardUID: c.UID, CardID: c.ID,
+			Title: c.Title, Project: c.Project, ProjectName: projectName(b, c.Project), At: stamp, AcceptedAt: stamp,
+			XP: taskXP, Crew: crew(c)})
+		added = true
+	}
+	if !added {
+		return nil
+	}
+	return writeJourney(dir, j)
+}
+
 func (j *Journey) victory(uid string) *Victory {
 	for i := range j.Victories {
 		if j.Victories[i].CardUID == uid {
@@ -366,9 +403,6 @@ func journeyChange(dir string, in JourneyAction, actor string) (*Journey, error)
 				if c.Status == "canceled" || j.victory(c.UID) != nil {
 					return errors.New("choose an unfinished quest")
 				}
-				if in.XP != 10 && in.XP != 25 && in.XP != 50 {
-					return errors.New("quest XP must be 10, 25 or 50")
-				}
 				n := 0
 				for _, q := range j.Quests {
 					if q.Date == in.Date {
@@ -381,7 +415,7 @@ func journeyChange(dir string, in JourneyAction, actor string) (*Journey, error)
 				if n >= 3 {
 					return errors.New("a daily run holds up to three quests")
 				}
-				j.Quests = append(j.Quests, Quest{Date: in.Date, CardUID: c.UID, Title: c.Title, XP: in.XP})
+				j.Quests = append(j.Quests, Quest{Date: in.Date, CardUID: c.UID, Title: c.Title, XP: taskXP})
 			} else {
 				if in.Action == "personal-complete" {
 					if c.Assignee != "me" || c.Status == "canceled" {
@@ -428,27 +462,16 @@ func journeyChange(dir string, in JourneyAction, actor string) (*Journey, error)
 					if c.Assignee != "me" || c.Status == "canceled" {
 						return errors.New("only your own unfinished tasks can be completed here")
 					}
-					in.XP = 10
 				}
 				if in.Action != "personal-complete" && c.Status != "done" && c.Status != "in-review" {
 					return errors.New("finish the task or send it for review before you record the win")
-				}
-				if in.XP != 10 && in.XP != 25 && in.XP != 50 {
-					return errors.New("win XP must be 10, 25 or 50")
-				}
-				xp := in.XP
-				for i := len(j.Quests) - 1; i >= 0; i-- {
-					if j.Quests[i].CardUID == c.UID {
-						xp = j.Quests[i].XP
-						break
-					}
 				}
 				if len(in.Reflection) > 8000 {
 					return errors.New("keep the reflection under 8000 characters")
 				}
 				j.Victories = append(j.Victories, Victory{ID: "card:" + c.UID, Kind: "card", CardUID: c.UID, CardID: c.ID,
 					Title: c.Title, Project: c.Project, ProjectName: projectName(b, c.Project), At: stamp, AcceptedAt: stamp,
-					Reflection: strings.TrimSpace(in.Reflection), XP: xp, Crew: crew(c)})
+					Reflection: strings.TrimSpace(in.Reflection), XP: taskXP, Crew: crew(c)})
 				if c.Status != "done" {
 					c.Activity = append(c.Activity, now()+" me: "+c.Status+" → done")
 					c.Status = "done"

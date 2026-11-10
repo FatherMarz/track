@@ -404,6 +404,11 @@ func Create(dir, projectKey, title string, p Patch, actor string) (*Card, error)
 		if err := b.writeCard(c); err != nil {
 			return err
 		}
+		if c.Status == "done" {
+			if err := awardDone(dir, b, c); err != nil {
+				return err
+			}
+		}
 		out = c
 		return commit(dir, fmt.Sprintf("%s: created (%s)", c.ID, actor))
 	})
@@ -423,6 +428,7 @@ func Update(dir, id string, p Patch, actor string) (*Card, error) {
 			return fmt.Errorf("no card %s", id)
 		}
 		t := now()
+		was := c.Status
 		changes, err := applyPatch(b, c, p, actor, t)
 		if err != nil {
 			return err
@@ -434,6 +440,11 @@ func Update(dir, id string, p Patch, actor string) (*Card, error) {
 		c.Updated = t
 		if err := b.writeCard(c); err != nil {
 			return err
+		}
+		if c.Status == "done" && was != "done" {
+			if err := awardDone(dir, b, c); err != nil {
+				return err
+			}
 		}
 		out = c
 		return commit(dir, fmt.Sprintf("%s: %s (%s)", c.ID, strings.Join(changes, ", "), actor))
@@ -455,6 +466,7 @@ func Reorder(dir, status string, ids []string, actor string) error {
 		}
 		t := now()
 		var moved []string
+		var finished []*Card
 		for i, id := range ids {
 			c, ok := b.card(id)
 			if !ok {
@@ -467,6 +479,9 @@ func Reorder(dir, status string, ids []string, actor string) error {
 				c.Status = st
 				c.Updated = t
 				moved = append(moved, c.ID)
+				if st == "done" {
+					finished = append(finished, c)
+				}
 				changed = true
 			}
 			if changed {
@@ -474,6 +489,9 @@ func Reorder(dir, status string, ids []string, actor string) error {
 					return err
 				}
 			}
+		}
+		if err := awardDone(dir, b, finished...); err != nil {
+			return err
 		}
 		msg := "reorder " + st
 		if len(moved) > 0 {

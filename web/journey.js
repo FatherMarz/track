@@ -50,7 +50,7 @@ function renderDailyRun() {
     ${quests.length ? `<div class="journey-meter" role="progressbar" aria-label="Today’s quests" aria-valuenow="${finished.length}" aria-valuemin="0" aria-valuemax="${quests.length}"><span style="width:${finished.length/quests.length*100}%"></span></div>` : ""}
     <div class="run-quests">${quests.map((q) => {
       const c = cardByUID(q.card_uid), v = won(q.card_uid);
-      return `<div class="run-quest ${v ? "landed" : ""}"><div><span class="journey-eyebrow">${v ? "✓ LANDED" : q.xp === 50 ? "MAIN QUEST" : "SIDE QUEST"} · ${q.xp} XP</span><div class="run-quest-title">${esc(q.title)}</div><span class="journey-muted">${c ? esc(project(c.project)?.name || c.project) : "Task no longer on the board"}${c && !v ? " · " + esc(STATUS_NAMES[c.status]) : ""}</span></div>
+      return `<div class="run-quest ${v ? "landed" : ""}"><div><span class="journey-eyebrow">${v ? "✓ LANDED" : "QUEST"} · ${v ? v.xp : 10} XP</span><div class="run-quest-title">${esc(q.title)}</div><span class="journey-muted">${c ? esc(project(c.project)?.name || c.project) : "Task no longer on the board"}${c && !v ? " · " + esc(STATUS_NAMES[c.status]) : ""}</span></div>
       <div class="journey-actions">${v ? `<span class="journey-complete">Recorded</span>` : c ? `${["in-review","done"].includes(c.status) ? `<button class="btn primary" data-journey="accept" data-card="${esc(c.id)}">Accept & record</button>` : `<button class="btn" data-journey="open" data-card="${esc(c.id)}">Open task</button>`}<button class="journey-text-button" data-journey="unquest" data-card="${esc(c.id)}" aria-label="Remove ${esc(q.title)} from today’s run">Remove</button>` : ""}</div></div>`;
     }).join("")}</div>
     <div class="run-footer">${quests.length < 3 ? `<button class="btn" data-journey="quest-picker">${quests.length ? "Add a quest" : "Choose up to three quests"}</button>` : ""}<span class="journey-muted">${ready ? `<button class="journey-text-button" data-journey="ready">${ready} result${ready === 1 ? "" : "s"} ready to record ↗</button>` : "Your progress stays. No streaks to lose."}</span></div>
@@ -61,7 +61,7 @@ function renderCardJourney(c) {
   const v = won(c.uid);
   if (v) return `<div class="card-journey"><span class="journey-complete">✦ Saved in your Journey</span><span class="journey-muted">${dateLabel(v.at)}${v.kind === "earlier" ? " · Earlier work" : ` · ${v.xp} XP`}</span><button class="journey-text-button" data-go="#/journey">View your Journey ↗</button></div>`;
   const q = journey().quests.find((q) => q.card_uid === c.uid && q.date === localDay());
-  return `<div class="card-journey"><span class="journey-eyebrow">YOUR JOURNEY</span><div class="journey-actions">${["done", "in-review"].includes(c.status) ? `<button class="btn primary" data-journey="accept" data-card="${esc(c.id)}">Accept & record win</button>` : ""}${!q && c.status !== "canceled" ? `<button class="btn" data-journey="quest-card" data-card="${esc(c.id)}">Add to today’s run</button>` : q ? `<span class="journey-muted">In today’s run · ${q.xp} XP</span>` : ""}</div></div>`;
+  return `<div class="card-journey"><span class="journey-eyebrow">YOUR JOURNEY</span><div class="journey-actions">${["done", "in-review"].includes(c.status) ? `<button class="btn primary" data-journey="accept" data-card="${esc(c.id)}">Accept & record win</button>` : ""}${!q && c.status !== "canceled" ? `<button class="btn" data-journey="quest-card" data-card="${esc(c.id)}">Add to today’s run</button>` : q ? `<span class="journey-muted">In today’s run · 10 XP</span>` : ""}</div></div>`;
 }
 
 function visibleVictories() {
@@ -188,14 +188,13 @@ function journeyDialog(title, body, submit, onSubmit) {
   if(!d.open)d.showModal();
 }
 
-const xpField = (value=25) => `<label>Size of the outcome<select name="xp" aria-label="Size of the outcome">${[[10,"Small · 10 XP"],[25,"Meaningful · 25 XP"],[50,"Big · 50 XP"]].map(([n,label])=>`<option value="${n}" ${value===n?"selected":""}>${label}</option>`).join("")}</select></label>`;
 
 function pickQuest(onlyCard) {
   const selected=journey().quests.filter(q=>q.date===localDay()).map(q=>q.card_uid);
   const cards=S.data.cards.filter(c=>c.status!=="canceled"&&!won(c.uid)&&!selected.includes(c.uid));
   if(!cards.length){toast("No unfinished quests to add.");return;}
-  journeyDialog("Choose a quest",`<label>Task<input type="search" id="quest-search" placeholder="Find a task…" autocomplete="off"></label><label>Choose a task<select name="card" aria-label="Choose a task" size="7" required>${cards.filter(c=>!onlyCard||c.id===onlyCard).map(c=>`<option value="${esc(c.id)}">${esc(c.id)} · ${esc(c.title)}</option>`).join("")}</select></label>${xpField()}<p class="journey-muted">Up to three quests today. Pick what matters. Unfinished quests remain in your history.</p>`,"Add to today’s run",async f=>{
-    const ok=await changeJourney({action:"quest",card_id:f.get("card"),date:localDay(),xp:Number(f.get("xp"))});
+  journeyDialog("Choose a quest",`<label>Task<input type="search" id="quest-search" placeholder="Find a task…" autocomplete="off"></label><label>Choose a task<select name="card" aria-label="Choose a task" size="7" required>${cards.filter(c=>!onlyCard||c.id===onlyCard).map(c=>`<option value="${esc(c.id)}">${esc(c.id)} · ${esc(c.title)}</option>`).join("")}</select></label><p class="journey-muted">Up to three quests today. Pick what matters. Unfinished quests remain in your history.</p>`,"Add to today’s run",async f=>{
+    const ok=await changeJourney({action:"quest",card_id:f.get("card"),date:localDay()});
     if(ok)toast("Quest added. One clear next step.");return ok;
   });
   const select=$("#journey-dialog select[name=card]");
@@ -209,10 +208,9 @@ function pickQuest(onlyCard) {
 
 function acceptWin(id) {
   const c=card(id);if(!c)return;
-  const q=[...journey().quests].reverse().find(q=>q.card_uid===c.uid);
-  journeyDialog("Save this win",`<div class="journey-dialog-subject">${esc(c.title)}</div>${q?`<p class="journey-muted">${q.xp} XP · ${q.xp===50?"Main":"Side"} quest</p>`:xpField()}<label>What will you want to remember?<textarea name="reflection" rows="4" maxlength="8000" placeholder="What changed? What was hard? Why did this matter?"></textarea></label><p class="journey-muted">Accepting records this outcome once and marks the task Done. Your words stay with it.</p>`,"Accept & record win",async f=>{
+  journeyDialog("Save this win",`<div class="journey-dialog-subject">${esc(c.title)}</div><p class="journey-muted">10 XP</p><label>What will you want to remember?<textarea name="reflection" rows="4" maxlength="8000" placeholder="What changed? What was hard? Why did this matter?"></textarea></label><p class="journey-muted">Accepting records this outcome once and marks the task Done. Your words stay with it.</p>`,"Accept & record win",async f=>{
     const before=levelInfo().level;
-    const ok=await changeJourney({action:"accept",card_id:id,xp:q?.xp||Number(f.get("xp")),reflection:f.get("reflection")});
+    const ok=await changeJourney({action:"accept",card_id:id,reflection:f.get("reflection")});
     if(ok)toast(levelInfo().level>before?`Level ${levelInfo().level}. Look what you’re building.`:"Win recorded. That one counts.");return ok;
   });
 }

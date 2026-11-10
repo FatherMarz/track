@@ -40,7 +40,7 @@ func TestJourneyPreservesHistoryAcrossMoveReopenAndDeletion(t *testing.T) {
 		t.Fatal(err)
 	}
 	j := journeyDo(t, dir, JourneyAction{Action: "accept", CardID: c.ID, XP: 10, Reflection: "The first version people could actually use."})
-	if len(j.Victories) != 1 || j.Victories[0].XP != 50 || j.Victories[0].Crew != "You + your agents" {
+	if len(j.Victories) != 1 || j.Victories[0].XP != 10 || j.Victories[0].Crew != "You + your agents" {
 		t.Fatalf("victory: %+v", j.Victories)
 	}
 	uid := c.UID
@@ -144,7 +144,7 @@ func TestJourneyQuestLimitAgentGateAndConcurrentAcceptance(t *testing.T) {
 	}
 	b, _ := loadBoard(dir)
 	j, _, _ := readJourney(dir, b)
-	if len(j.Victories) != 1 || j.Victories[0].XP != 25 {
+	if len(j.Victories) != 1 || j.Victories[0].XP != 10 {
 		t.Fatalf("duplicate awards: %+v", j.Victories)
 	}
 }
@@ -277,5 +277,39 @@ func TestRetrospectiveMilestoneAndChapterOrganization(t *testing.T) {
 	saved, _, err := readJourney(dir, b)
 	if err != nil || len(saved.Chapters) != 2 || saved.Victories[0] != original {
 		t.Fatalf("saved history: %+v, %v", saved, err)
+	}
+}
+
+func TestEveryFinishedTaskEarnsTenOnce(t *testing.T) {
+	dir := testJourney(t)
+	done, todo := "done", "todo"
+	a, _ := Create(dir, "web", "Finished from the CLI", Patch{}, "agent")
+	b1, _ := Create(dir, "web", "Dragged to Done", Patch{}, "me")
+	if _, err := Update(dir, a.ID, Patch{Status: &done}, "agent"); err != nil {
+		t.Fatal(err)
+	}
+	if err := Reorder(dir, "done", []string{b1.ID, a.ID}, "me"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Create(dir, "home", "Born finished", Patch{Status: &done}, "me"); err != nil {
+		t.Fatal(err)
+	}
+	Update(dir, a.ID, Patch{Status: &todo}, "me")
+	Update(dir, a.ID, Patch{Status: &done}, "me")
+	board, _ := loadBoard(dir)
+	j, _, err := readJourney(dir, board)
+	if err != nil || len(j.Victories) != 3 {
+		t.Fatalf("wins: %+v, %v", j, err)
+	}
+	for _, v := range j.Victories {
+		if v.XP != 10 || v.Kind != "card" {
+			t.Fatalf("win: %+v", v)
+		}
+	}
+	if j.Victories[0].Crew != "You + your agents" {
+		t.Fatalf("crew: %+v", j.Victories[0])
+	}
+	if out, _ := git(dir, "status", "--porcelain"); out != "" {
+		t.Fatalf("uncommitted: %s", out)
 	}
 }
