@@ -144,7 +144,7 @@ func TestJourneyQuestLimitAgentGateAndConcurrentAcceptance(t *testing.T) {
 	}
 	b, _ := loadBoard(dir)
 	j, _, _ := readJourney(dir, b)
-	if len(j.Victories) != 1 || j.Victories[0].XP != 10 {
+	if len(j.Victories) != 1 || j.Victories[0].XP != 1 { // the agent finished it, so it earned 1
 		t.Fatalf("duplicate awards: %+v", j.Victories)
 	}
 }
@@ -280,7 +280,7 @@ func TestRetrospectiveMilestoneAndChapterOrganization(t *testing.T) {
 	}
 }
 
-func TestEveryFinishedTaskEarnsTenOnce(t *testing.T) {
+func TestFinishedTaskEarnsOnceTenForMeOneForAgent(t *testing.T) {
 	dir := testJourney(t)
 	done, todo := "done", "todo"
 	a, _ := Create(dir, "web", "Finished from the CLI", Patch{}, "agent")
@@ -301,8 +301,12 @@ func TestEveryFinishedTaskEarnsTenOnce(t *testing.T) {
 	if err != nil || len(j.Victories) != 3 {
 		t.Fatalf("wins: %+v, %v", j, err)
 	}
-	for _, v := range j.Victories {
-		if v.XP != 10 || v.Kind != "card" {
+	for i, v := range j.Victories {
+		want := 10
+		if i == 0 { // the agent finished this one
+			want = 1
+		}
+		if v.XP != want || v.Kind != "card" {
 			t.Fatalf("win: %+v", v)
 		}
 	}

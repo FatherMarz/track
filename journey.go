@@ -203,13 +203,23 @@ func initJourney(dir string) error {
 	})
 }
 
-// Every finished task earns the same reward once. A milestone earns 100.
-const taskXP = 10
+// A task you finish earns 10 once. A task an agent finishes earns 1. A milestone earns 100.
+const (
+	taskXP = 10
+	botXP  = 1
+)
 
-// awardDone records the win for cards that just reached Done, whoever finished them
-// and from wherever (board, list, CLI, agent). Journey starts with the first server
-// run, so nothing is recorded before journey.json exists.
-func awardDone(dir string, b *Board, cards ...*Card) error {
+func doneXP(actor string) int {
+	if actor == "me" {
+		return taskXP
+	}
+	return botXP
+}
+
+// awardDone records the win for cards that just reached Done, from wherever (board, list,
+// CLI, agent). The reward depends on who finished them. Journey starts with the first
+// server run, so nothing is recorded before journey.json exists.
+func awardDone(dir string, b *Board, actor string, cards ...*Card) error {
 	if len(cards) == 0 {
 		return nil
 	}
@@ -231,7 +241,7 @@ func awardDone(dir string, b *Board, cards ...*Card) error {
 		}
 		j.Victories = append(j.Victories, Victory{ID: "card:" + c.UID, Kind: "card", CardUID: c.UID, CardID: c.ID,
 			Title: c.Title, Project: c.Project, ProjectName: projectName(b, c.Project), At: stamp, AcceptedAt: stamp,
-			XP: taskXP, Crew: crew(c)})
+			XP: doneXP(actor), Crew: crew(c)})
 		added = true
 	}
 	if !added {

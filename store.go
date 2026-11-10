@@ -405,7 +405,7 @@ func Create(dir, projectKey, title string, p Patch, actor string) (*Card, error)
 			return err
 		}
 		if c.Status == "done" {
-			if err := awardDone(dir, b, c); err != nil {
+			if err := awardDone(dir, b, actor, c); err != nil {
 				return err
 			}
 		}
@@ -442,7 +442,7 @@ func Update(dir, id string, p Patch, actor string) (*Card, error) {
 			return err
 		}
 		if c.Status == "done" && was != "done" {
-			if err := awardDone(dir, b, c); err != nil {
+			if err := awardDone(dir, b, actor, c); err != nil {
 				return err
 			}
 		}
@@ -490,7 +490,7 @@ func Reorder(dir, status string, ids []string, actor string) error {
 				}
 			}
 		}
-		if err := awardDone(dir, b, finished...); err != nil {
+		if err := awardDone(dir, b, actor, finished...); err != nil {
 			return err
 		}
 		msg := "reorder " + st

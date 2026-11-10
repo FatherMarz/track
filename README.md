@@ -131,8 +131,9 @@ The six-month view shows your progress by month. All wins supports project filte
 You can also view all recorded history.
 
 Choose up to three daily quests on Home.
-Every task earns 10 XP once when it moves to Done, from the board, a list, the CLI, or an agent.
-A result in In Review earns its 10 XP when you accept it.
+Every task earns XP once when it moves to Done, from the board, a list, the CLI, or an agent.
+A task you finish earns 10 XP. A task an agent finishes earns 1 XP.
+A result in In Review earns 10 XP when you accept it.
 Every 250 XP adds a level. Missed days do not remove progress.
 
 Create a milestone with a title, project, target date, and optional linked tasks.
