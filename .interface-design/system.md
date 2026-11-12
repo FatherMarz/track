@@ -15,12 +15,13 @@ Journey makes completed work visible over months and preserves what each accompl
 
 - Use surface shifts and quiet borders. Avoid decorative shadows within the page.
 - Use a 4px spacing grid. Page padding is 40px on desktop and 16px on phones.
-- Journey follows one continuous story: chapters in start-date order, the milestones within each chapter, then wins and the monthly trail. Lifetime totals and levels stay in a quiet header line.
-- Desktop hero: 32px heading, 48px totals. Phone hero: 28px heading, 40px totals.
+- Journey is compact: a three-cell stats strip (finished, milestones, level with meter), chapters, short milestone rows, then Wins with inline filters, a 48px monthly trail and one-line win rows (title, project, date).
+- No eyebrows, explainer lines or duplicate buttons. Page actions live in the top bar.
 - Section heading: 16px/500. Win title: 15px/500. Metadata: 11–12px.
 - Keep typography and columns readable at 320px. Controls on phones need approximately 44px targets.
 - My day uses a single narrow column. Keep its quick-add field, task title, and completion circle prominent.
-- My day is a compact checklist: 12px task text, 1.4 line height, 5px row padding, and no metadata beneath titles.
+- My Day is a compact checklist: 13px task text, 6px row padding, no metadata beneath titles, no filler copy.
+- Order: title + date + Pin/Journey/Track links on one line, boxed quick-add, Today (with done count), From earlier (tap + to pull into today), then folded Other to-dos and Milestones (+ Add) lines, then Scratchpad.
 - Clamp long personal titles to two lines. The task remains available in full when opened.
 - The sticky note uses 14px horizontal padding, a 22px heading, and 18px completion circles on fine pointers.
 - Keep larger hit areas for coarse pointers. Preserve expanded lists and draft input through live updates.

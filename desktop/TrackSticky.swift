@@ -26,7 +26,7 @@ final class StickyApp: NSObject, NSApplicationDelegate, WKScriptMessageHandler, 
         web.navigationDelegate = self
         web.setValue(false, forKey: "drawsBackground")
         panel = StickyPanel(contentRect: NSRect(x: 0, y: 0, width: 320, height: 360), styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
-        panel.title = "Track · My day"
+        panel.title = "Track | My Day"
         panel.isReleasedWhenClosed = false
         panel.hidesOnDeactivate = false
         panel.isFloatingPanel = true
@@ -43,7 +43,7 @@ final class StickyApp: NSObject, NSApplicationDelegate, WKScriptMessageHandler, 
         status = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         status.button?.image = NSImage(systemSymbolName: "checklist", accessibilityDescription: "Track My day")
         let menu = NSMenu()
-        let show = NSMenuItem(title: "Show My day", action: #selector(showWindow), keyEquivalent: "")
+        let show = NSMenuItem(title: "Show My Day", action: #selector(showWindow), keyEquivalent: "")
         show.target = self; menu.addItem(show)
         pinItem = NSMenuItem(title: "Always on top", action: #selector(togglePin), keyEquivalent: "")
         pinItem.target = self; menu.addItem(pinItem)

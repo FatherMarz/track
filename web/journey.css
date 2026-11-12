@@ -180,3 +180,61 @@
   .sticky-mode .journey-form textarea { min-height:60px; }
   .sticky-mode .journey-form footer { position:sticky; bottom:0; background:var(--panel); padding:8px 0 0; }
 }
+/* Compact Journey: stats strip, short milestone rows, one-line wins. */
+.journey-linear { max-width:880px; padding-top:28px; }
+.story-stats { display:grid; grid-template-columns:1fr 1fr 2fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:28px; }
+.story-stats > div { background:var(--panel); padding:14px 16px; display:flex; flex-direction:column; gap:2px; min-width:0; }
+.story-stats strong { font-size:22px; font-weight:600; letter-spacing:-.03em; font-variant-numeric:tabular-nums; line-height:1.2; }
+.story-stats span { font-size:12px; color:var(--muted); }
+.story-level strong { color:var(--focus); }
+.story-level .journey-meter { margin-top:8px; height:4px; }
+.journey-linear .journey-section-head { margin-bottom:8px; flex-wrap:nowrap; }
+.journey-linear .journey-section-head h3 { font-size:13px; font-weight:600; margin:0; color:var(--text); letter-spacing:0; white-space:nowrap; }
+.story-start { display:flex; align-items:center; justify-content:space-between; gap:12px; border:1px dashed var(--line); border-radius:8px; padding:10px 14px; margin-bottom:24px; color:var(--muted); font-size:12px; }
+.story-start .journey-text-button { color:var(--focus); white-space:nowrap; min-height:0; }
+.story-chapter { padding-bottom:20px; }
+.chapter-heading { margin-bottom:12px; }
+.chapter-heading h3 { font-size:18px; margin:4px 0; }
+.story-unfiled { margin:0 0 28px; }
+.journey-linear .journey-milestones { margin-bottom:0; }
+.journey-linear .journey-milestone { gap:12px; padding:10px 0; border-bottom:0; border-top:1px solid var(--line); }
+.journey-linear .milestone-symbol { font-size:16px; width:18px; }
+.journey-linear .milestone-body h4 { font-size:14px; margin:0 0 2px; }
+.journey-linear .milestone-body .journey-actions { margin-top:6px; }
+.journey-linear .milestone-body .journey-actions:empty { display:none; }
+.journey-linear .milestone-body blockquote,.journey-linear .milestone-body p { margin:6px 0; font-size:12px; }
+.journey-linear .journey-text-button { min-height:0; }
+.story-next-chapter { margin:0 0 20px; }
+.story-wins { border-top:0; padding-top:0; margin-top:8px; }
+.story-wins .journey-filters { margin:0; flex-wrap:nowrap; gap:6px; align-items:center; flex:1; justify-content:end; }
+.story-wins .journey-filters label { gap:0; }
+.story-wins .journey-filters select,.story-wins .journey-filters input { min-height:28px; padding:4px 8px; font-size:12px; }
+.story-wins .journey-search { flex:0 1 200px; min-width:100px; }
+.journey-linear .journey-trail { padding:4px 0 16px; margin-bottom:16px; border-bottom:1px solid var(--line); }
+.journey-linear .journey-months { gap:6px; }
+.journey-linear .journey-month { padding:4px 2px; gap:4px; }
+.journey-linear .month-bar-space { height:48px; }
+.journey-linear .month-count,.journey-linear .month-label { font-size:11px; }
+.journey-linear .journey-period-summary { margin:0 0 12px; font-size:12px; }
+.journey-linear .journey-month-group { border-left:0; padding-left:0; margin-bottom:16px; }
+.journey-linear .journey-month-group > h4 { display:flex; justify-content:space-between; font-size:11px; font-weight:500; color:var(--muted); margin:0 0 4px; padding-bottom:4px; border-bottom:1px solid var(--line); }
+.journey-linear .journey-month-group > h4 span { color:var(--faint); font-variant-numeric:tabular-nums; }
+.journey-linear .journey-victory { display:flex; align-items:baseline; gap:10px; padding:5px 8px; margin:0 -8px; border-radius:6px; }
+.journey-linear .journey-victory:hover { background:var(--card); }
+.journey-linear .victory-mark { font-size:12px; width:14px; }
+.journey-linear .victory-body { flex:1; min-width:0; }
+.victory-title { display:block; width:100%; background:none; border:0; padding:0; text-align:left; color:var(--text); font-size:13px; line-height:1.45; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+button.victory-title:hover { color:var(--focus); }
+.journey-linear .victory-body p { margin:2px 0 2px; font-size:12px; color:var(--muted); }
+.victory-meta { display:flex; gap:10px; flex:none; font-size:11px; color:var(--faint); white-space:nowrap; }
+.victory-meta time { width:44px; text-align:right; font-variant-numeric:tabular-nums; }
+.journey-linear .past-runs { margin-top:12px; font-size:12px; }
+@media(max-width:760px) {
+  .story-stats { grid-template-columns:1fr 1fr; }
+  .story-level { grid-column:1 / -1; }
+  .journey-linear .journey-section-head { flex-wrap:wrap; }
+  .story-wins .journey-filters { flex-wrap:wrap; justify-content:start; }
+  .story-wins .journey-filters select,.story-wins .journey-filters input { font-size:16px; min-height:40px; }
+  .victory-meta span { display:none; }
+  .victory-title { white-space:normal; }
+}

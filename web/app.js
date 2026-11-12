@@ -265,7 +265,7 @@ function renderNav() {
   const item = (hash, label, count, active, dot) =>
     `<button class="nav-item ${active ? "active" : ""}" data-go="${hash}">${dot || ""}<span>${esc(label)}</span>${count ? `<span class="count">${count}</span>` : ""}</button>`;
   let h = item("#/", "Home", homeCards(cards).length, r.kind === "home", "");
-  h += item("#/mine", "My day", personalToday().filter(c=>OPEN(c)).length, r.kind === "mine", "◦");
+  h += item("#/mine", "My Day", personalToday().filter(c=>OPEN(c)).length, r.kind === "mine", "◦");
   h += item("#/journey", "Journey", 0, r.kind === "journey", "✦");
   h += item("#/inbox", "Inbox", cards.filter((c) => c.project === "inbox" && OPEN(c)).length, r.kind === "inbox");
   h += `<div class="nav-head">Projects</div>`;
@@ -288,7 +288,7 @@ function renderPills() {
     `<button class="pill ${on ? "on" : ""}" data-go="${hash}">${color ? `<span class="dot" style="background:${esc(color)}"></span>` : ""}${esc(label)}${n ? `<span class="n">${n}</span>` : ""}</button>`;
   let h = `<button class="pill icon" id="search" aria-label="Search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>`;
   h += pill("#/", "Home", 0, r.kind === "home");
-  h += pill("#/mine", "My day", 0, r.kind === "mine");
+  h += pill("#/mine", "My Day", 0, r.kind === "mine");
   h += pill("#/journey", "Journey", 0, r.kind === "journey");
   const inbox = cards.filter((c) => c.project === "inbox" && OPEN(c)).length;
   if (inbox || r.kind === "inbox") h += pill("#/inbox", "Inbox", inbox, r.kind === "inbox");
@@ -309,7 +309,7 @@ function pageName() {
   const r = S.route;
   if (r.kind === "inbox") return "Inbox";
   if (r.kind === "journey") return "Journey";
-  if (r.kind === "mine") return "My day";
+  if (r.kind === "mine") return "My Day";
   if (r.kind === "project") return project(r.key)?.name || "Project";
   if (r.kind === "view") return r.key;
   return "Home";
